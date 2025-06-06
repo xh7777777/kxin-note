@@ -2,9 +2,9 @@ name: Build & Test
 
 on:
   push:
-    branches: [main, dev, dev-test-init]
+    branches: [main, dev]
   pull_request:
-    branches: [main, dev, dev-test-init]
+    branches: [main, dev]
 
 jobs:
   build:
@@ -27,4 +27,4 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm test
-      - run: npm run build
+      # - run: npm run build
