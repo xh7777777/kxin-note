@@ -18,7 +18,7 @@ class Timer {
    * @date 2019-11-25
    */
   timeout(interval: number, args?: any): Promise<Timer> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       setTimeout(() => {
         resolve(args);
       }, interval);
@@ -43,11 +43,11 @@ class Timer {
    */
   interval(interval: number, callback: Function) {
     this.timeout(interval).then(() => {
-      typeof callback === "function" &&
+      typeof callback === 'function' &&
         callback() !== false &&
         this.interval(interval, callback);
     });
-    return { then: (c) => (callback = c) };
+    return { then: c => (callback = c) };
   }
 
   /**

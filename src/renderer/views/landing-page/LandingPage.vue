@@ -59,12 +59,12 @@
 </template>
 
 <script setup lang="ts">
-import SystemInformation from "./components/system-info-mation.vue";
-import { message } from "@renderer/api/login";
-import logo from "@renderer/assets/logo.png";
-import { ref } from "vue";
-import { i18nt, setLanguage, globalLang } from "@renderer/i18n";
-import { useStoreTemplate } from "@store/template";
+import SystemInformation from './components/system-info-mation.vue';
+import { message } from '@renderer/api/login';
+import logo from '@renderer/assets/logo.png';
+import { ref } from 'vue';
+import { i18nt, setLanguage, globalLang } from '@renderer/i18n';
+import { useStoreTemplate } from '@store/template';
 
 const { ipcRendererChannel, shell, crash } = window;
 
@@ -80,16 +80,16 @@ const { ipcRendererChannel, shell, crash } = window;
 
 const percentage = ref(0);
 const colors = ref([
-  { color: "#f56c6c", percentage: 20 },
-  { color: "#e6a23c", percentage: 40 },
-  { color: "#6f7ad3", percentage: 60 },
-  { color: "#1989fa", percentage: 80 },
-  { color: "#5cb87a", percentage: 100 },
+  { color: '#f56c6c', percentage: 20 },
+  { color: '#e6a23c', percentage: 40 },
+  { color: '#6f7ad3', percentage: 60 },
+  { color: '#1989fa', percentage: 80 },
+  { color: '#5cb87a', percentage: 100 },
 ] as string | ColorInfo[]);
 const dialogVisible = ref(false);
 const progressStaus = ref(null);
-const filePath = ref("");
-const updateStatus = ref("");
+const filePath = ref('');
+const updateStatus = ref('');
 const showForcedUpdate = ref(false);
 
 const storeTemplate = useStoreTemplate();
@@ -99,7 +99,7 @@ console.log(`storeTemplate`, storeTemplate.getTest1);
 console.log(`storeTemplate`, storeTemplate.$state.testData);
 
 setTimeout(() => {
-  storeTemplate.TEST_ACTION("654321");
+  storeTemplate.TEST_ACTION('654321');
   console.log(`storeTemplate`, storeTemplate.getTest1);
 }, 1000);
 
@@ -107,7 +107,7 @@ const elPageSize = ref(100);
 const elCPage = ref(1);
 
 function changeLanguage() {
-  setLanguage(globalLang.value === "zh-cn" ? "en" : "zh-cn");
+  setLanguage(globalLang.value === 'zh-cn' ? 'en' : 'zh-cn');
 }
 
 function startCrash() {
@@ -116,20 +116,20 @@ function startCrash() {
 
 function openNewWin() {
   const data = {
-    url: "/form/index",
+    url: '/form/index',
   };
   ipcRendererChannel.OpenWin.invoke(data);
   // ipcRenderer.invoke("open-win", data);
 }
 function getMessage() {
-  message().then((res) => {
+  message().then(res => {
     // ElMessageBox.alert(res.data, "提示", {
     //   confirmButtonText: "确定",
     // });
   });
 }
 function StopServer() {
-  ipcRendererChannel.StopServer.invoke().then((res) => {
+  ipcRendererChannel.StopServer.invoke().then(res => {
     // ElMessage({
     //   type: "success",
     //   message: "已关闭",
@@ -137,7 +137,7 @@ function StopServer() {
   });
 }
 function StartServer() {
-  ipcRendererChannel.StartServer.invoke().then((res) => {
+  ipcRendererChannel.StartServer.invoke().then(res => {
     if (res) {
       // ElMessage({
       //   type: "success",
@@ -150,19 +150,19 @@ function StartServer() {
 function open() {}
 function CheckUpdate(data) {
   switch (data) {
-    case "one":
+    case 'one':
       ipcRendererChannel.CheckUpdate.invoke();
-      console.log("启动检查");
+      console.log('启动检查');
       break;
-    case "two":
-      ipcRendererChannel.StartDownload.invoke("https://xxx").then(() => {
+    case 'two':
+      ipcRendererChannel.StartDownload.invoke('https://xxx').then(() => {
         dialogVisible.value = true;
       });
       break;
-    case "three":
+    case 'three':
       ipcRendererChannel.HotUpdate.invoke();
       break;
-    case "four":
+    case 'four':
       showForcedUpdate.value = true;
       break;
 
@@ -179,14 +179,14 @@ ipcRendererChannel.DownloadProgress.on((event, arg) => {
 });
 ipcRendererChannel.DownloadError.on((event, arg) => {
   if (arg) {
-    progressStaus.value = "exception";
+    progressStaus.value = 'exception';
     percentage.value = 40;
-    colors.value = "#d81e06";
+    colors.value = '#d81e06';
   }
 });
 ipcRendererChannel.DownloadPaused.on((event, arg) => {
   if (arg) {
-    progressStaus.value = "warning";
+    progressStaus.value = 'warning';
     // ElMessageBox.alert("下载由于未知原因被中断！", "提示", {
     //   confirmButtonText: "重试",
     //   callback: (action) => {
@@ -197,7 +197,7 @@ ipcRendererChannel.DownloadPaused.on((event, arg) => {
 });
 ipcRendererChannel.DownloadDone.on((event, age) => {
   filePath.value = age.filePath;
-  progressStaus.value = "success";
+  progressStaus.value = 'success';
   // ElMessageBox.alert("更新下载完成！", "提示", {
   //   confirmButtonText: "确定",
   //   callback: (action) => {
@@ -210,21 +210,21 @@ ipcRendererChannel.UpdateMsg.on((event, age) => {
   switch (age.state) {
     case -1:
       const msgdata = {
-        title: "发生错误",
+        title: '发生错误',
         message: age.msg as string,
       };
       dialogVisible.value = false;
       ipcRendererChannel.OpenErrorbox.invoke(msgdata);
       break;
     case 0:
-      console.log("check-update");
+      console.log('check-update');
       break;
     case 1:
       dialogVisible.value = true;
-      console.log("has update download-ing");
+      console.log('has update download-ing');
       break;
     case 2:
-      console.log("not new version");
+      console.log('not new version');
       break;
     case 3:
       percentage.value = Number(
@@ -232,7 +232,7 @@ ipcRendererChannel.UpdateMsg.on((event, age) => {
       );
       break;
     case 4:
-      progressStaus.value = "success";
+      progressStaus.value = 'success';
       ipcRendererChannel.ConfirmUpdate.invoke();
       break;
     default:
@@ -241,17 +241,17 @@ ipcRendererChannel.UpdateMsg.on((event, age) => {
 });
 ipcRendererChannel.UpdateProcessStatus.on((event, msg) => {
   switch (msg.status) {
-    case "downloading":
-      console.log("正在下载");
+    case 'downloading':
+      console.log('正在下载');
       break;
-    case "moving":
-      console.log("正在移动文件");
+    case 'moving':
+      console.log('正在移动文件');
       break;
-    case "finished":
-      console.log("成功,请重启");
+    case 'finished':
+      console.log('成功,请重启');
       break;
-    case "failed":
-      console.log("msg.message.message");
+    case 'failed':
+      console.log('msg.message.message');
       break;
 
     default:
@@ -281,7 +281,7 @@ ipcRendererChannel.UpdateProcessStatus.on((event, msg) => {
 }
 
 body {
-  font-family: "Source Sans Pro", sans-serif;
+  font-family: 'Source Sans Pro', sans-serif;
 }
 
 #wrapper {

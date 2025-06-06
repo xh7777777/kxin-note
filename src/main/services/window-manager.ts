@@ -1,12 +1,11 @@
-import config from "@config/index";
-import { BrowserWindow, dialog } from "electron";
-import { winURL, loadingURL, getPreloadFile } from "../config/static-path";
-import { useProcessException } from "@main/hooks/exception-hook";
-
+import config from '@config/index';
+import { BrowserWindow, dialog } from 'electron';
+import { winURL, loadingURL, getPreloadFile } from '../config/static-path';
+import { useProcessException } from '@main/hooks/exception-hook';
 
 class MainInit {
-  public winURL: string = "";
-  public shartURL: string = "";
+  public winURL: string = '';
+  public shartURL: string = '';
   public loadWindow: BrowserWindow = null;
   public mainWindow: BrowserWindow = null;
   private childProcessGone = null;
@@ -21,9 +20,9 @@ class MainInit {
   createMainWindow() {
     this.mainWindow = new BrowserWindow({
       titleBarOverlay: {
-        color: "#fff",
+        color: '#fff',
       },
-      titleBarStyle: config.IsUseSysTitle ? "default" : "hidden",
+      titleBarStyle: config.IsUseSysTitle ? 'default' : 'hidden',
       height: 800,
       useContentSize: true,
       width: 1700,
@@ -34,38 +33,38 @@ class MainInit {
         sandbox: false,
         webSecurity: false,
         // 如果是开发模式可以使用devTools
-        devTools: process.env.NODE_ENV === "development",
+        devTools: process.env.NODE_ENV === 'development',
         // 在macos中启用橡皮动画
-        scrollBounce: process.platform === "darwin",
-        preload: getPreloadFile("preload"),
+        scrollBounce: process.platform === 'darwin',
+        preload: getPreloadFile('preload'),
       },
     });
 
     // 加载主窗口
     this.mainWindow.loadURL(this.winURL);
     // dom-ready之后显示界面
-    this.mainWindow.once("ready-to-show", () => {
+    this.mainWindow.once('ready-to-show', () => {
       this.mainWindow.show();
       if (config.UseStartupChart) this.loadWindow.destroy();
     });
     // 开发模式下自动开启devtools
-    if (process.env.NODE_ENV === "development") {
+    if (process.env.NODE_ENV === 'development') {
       this.mainWindow.webContents.openDevTools({
-        mode: "undocked",
+        mode: 'undocked',
         activate: true,
       });
     }
     // 不知道什么原因，反正就是这个窗口里的页面触发了假死时执行
-    this.mainWindow.on("unresponsive", () => {
+    this.mainWindow.on('unresponsive', () => {
       dialog
         .showMessageBox(this.mainWindow, {
-          type: "warning",
-          title: "警告",
-          buttons: ["重载", "退出"],
-          message: "图形化进程失去响应，是否等待其恢复？",
+          type: 'warning',
+          title: '警告',
+          buttons: ['重载', '退出'],
+          message: '图形化进程失去响应，是否等待其恢复？',
           noLink: true,
         })
-        .then((res) => {
+        .then(res => {
           if (res.response === 0) this.mainWindow.reload();
           else this.mainWindow.close();
         });
@@ -77,7 +76,7 @@ class MainInit {
      * @date 2020-11-27
      */
     this.childProcessGone(this.mainWindow);
-    this.mainWindow.on("closed", () => {
+    this.mainWindow.on('closed', () => {
       this.mainWindow = null;
     });
   }
@@ -92,7 +91,7 @@ class MainInit {
       resizable: false,
       webPreferences: {
         experimentalFeatures: true,
-        preload: getPreloadFile("preload"),
+        preload: getPreloadFile('preload'),
       },
     });
 

@@ -11,9 +11,9 @@
 </template>
 
 <script setup lang="ts">
-import { i18nt } from "@renderer/i18n";
-import { computed, ref } from "vue";
-import { useRoute } from "vue-router";
+import { i18nt } from '@renderer/i18n';
+import { computed, ref } from 'vue';
+import { useRoute } from 'vue-router';
 
 const { path, name } = useRoute();
 const { systemInfo } = window;

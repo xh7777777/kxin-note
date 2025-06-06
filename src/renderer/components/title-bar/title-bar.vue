@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref } from 'vue';
 const { ipcRendererChannel, systemInfo } = window;
 
 const IsUseSysTitle = ref(false);
@@ -24,9 +24,9 @@ const mix = ref(false);
 const isNotMac = ref(false);
 const IsWeb = ref(Boolean(__ISWEB__));
 
-isNotMac.value = systemInfo.platform !== "darwin";
+isNotMac.value = systemInfo.platform !== 'darwin';
 
-ipcRendererChannel.IsUseSysTitle.invoke().then((res) => {
+ipcRendererChannel.IsUseSysTitle.invoke().then(res => {
   IsUseSysTitle.value = res;
 });
 </script>

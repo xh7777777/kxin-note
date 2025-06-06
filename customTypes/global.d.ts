@@ -1,5 +1,5 @@
-import { ipcRenderer, shell } from "electron";
-import type { IIpcRendererInvoke, IIpcRendererOn } from "../src/ipc/index";
+import { ipcRenderer, shell } from 'electron';
+import type { IIpcRendererInvoke, IIpcRendererOn } from '../src/ipc/index';
 
 /**
  * 渲染进程给主进程发送消息
@@ -9,7 +9,7 @@ type IpcRendererInvoke = {
     /**
      * 渲染进程给主进程发送消息
      * @param args 参数
-     * @returns 
+     * @returns
      */
     invoke: IIpcRendererInvoke[key];
   };
@@ -23,18 +23,18 @@ type IpcRendererOn = {
     /**
      * 渲染进程监听事件
      * @param listener 监听事件
-     * @returns 
+     * @returns
      */
     on: (listener: IIpcRendererOn[key]) => void;
     /**
      * 渲染进程监听一次事件
-     * @param listener 
-     * @returns 
+     * @param listener
+     * @returns
      */
     once: (listener: IIpcRendererOn[key]) => void;
     /**
      * 渲染进程移除所有监听
-     * @returns 
+     * @returns
      */
     removeAllListeners: () => void;
   };
