@@ -11,6 +11,9 @@ build/
 # Test coverage reports
 coverage/
 
+# Lint cache
+.eslintcache
+
 # Editor directories and files
 .idea
 *.suo
