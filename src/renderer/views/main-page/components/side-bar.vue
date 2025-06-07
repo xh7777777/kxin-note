@@ -4,27 +4,46 @@
   >
     <!-- 搜索框 -->
     <div class="px-5 py-4 flex-shrink-0">
-      <div class="relative">
-        <input
-          type="text"
-          placeholder="Search"
-          class="w-full h-8 pl-9 pr-8 border border-gray-200 rounded-md text-sm bg-white outline-none transition-all duration-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 placeholder-gray-400"
-          v-model="searchQuery"
-        />
-        <svg
-          class="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-400 stroke-2"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
+      <div class="relative flex gap-2">
+        <div class="flex-1 relative">
+          <input
+            type="text"
+            placeholder="Search"
+            class="w-full h-8 pl-9 pr-8 border border-gray-200 rounded-md text-sm bg-white outline-none transition-all duration-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 placeholder-gray-400"
+            v-model="searchQuery"
+          />
+          <svg
+            class="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-400 stroke-2"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="M21 21l-4.35-4.35"></path>
+          </svg>
+          <span
+            class="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded font-mono"
+          >
+            /
+          </span>
+        </div>
+
+        <!-- 新增笔记按钮 -->
+        <button
+          @click="handleAddNote"
+          class="flex items-center justify-center w-8 h-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-all duration-200 shadow-sm hover:shadow-md"
+          title="Add New Note"
         >
-          <circle cx="11" cy="11" r="8"></circle>
-          <path d="M21 21l-4.35-4.35"></path>
-        </svg>
-        <span
-          class="absolute right-3 top-1/2 transform -translate-y-1/2 text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded font-mono"
-        >
-          /
-        </span>
+          <svg
+            class="w-4 h-4 stroke-2"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
       </div>
     </div>
 
@@ -127,11 +146,12 @@
             Notebooks
           </span>
           <button
-            class="w-4 h-4 border-none bg-transparent cursor-pointer flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity duration-200"
+            class="flex items-center justify-center w-6 h-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-all duration-200 shadow-sm hover:shadow-md"
             @click="handleAddNotebook"
+            title="Add New Notebook"
           >
             <svg
-              class="w-3 h-3 text-gray-500 stroke-2"
+              class="w-3 h-3 stroke-2"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -354,6 +374,7 @@ const emit = defineEmits<{
   'update:activeNotebook': [value: string | null];
   'update:activeNoteId': [value: string | null];
   'add-notebook': [];
+  'add-note': [];
   'toggle-dark-mode': [];
   'open-settings': [];
   'open-trash': [];
@@ -503,6 +524,19 @@ const handleAddNotebook = () => {
   if (!notebooksExpanded.value) {
     notebooksExpanded.value = true;
     localStorage.setItem('sidebar-notebooks-expanded', 'true');
+  }
+};
+
+const handleAddNote = () => {
+  emit('add-note');
+
+  // 如果没有选中笔记本，可以提示用户先选择笔记本
+  if (!props.activeNotebook) {
+    // 可以显示提示或自动展开笔记本区域
+    if (!notebooksExpanded.value) {
+      notebooksExpanded.value = true;
+      localStorage.setItem('sidebar-notebooks-expanded', 'true');
+    }
   }
 };
 

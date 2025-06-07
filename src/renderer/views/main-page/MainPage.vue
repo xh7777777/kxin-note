@@ -9,6 +9,7 @@
       :notebooks="notebooks"
       :notes="notes"
       @add-notebook="addNotebook"
+      @add-note="addNote"
       @toggle-dark-mode="toggleDarkMode"
       @open-settings="openSettings"
       @open-trash="openTrash"
@@ -65,6 +66,12 @@ const notes = ref<Note[]>([]);
 // 方法
 const addNotebook = () => {
   console.log('添加新笔记本');
+};
+
+const addNote = () => {
+  console.log('添加新笔记');
+  // 这里可以实现新增笔记的逻辑
+  // 例如打开笔记编辑器，创建新笔记等
 };
 
 const toggleDarkMode = () => {
