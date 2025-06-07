@@ -8,7 +8,6 @@ import {
   PageMetadata,
   PageStatus,
   BlockType,
-  NoteTreeNode,
   NoteIndexItem,
   NoteIndex,
 } from '../../common/models/note.types';
