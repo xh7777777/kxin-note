@@ -15,16 +15,6 @@ const routes: Array<RouteRecordRaw> = [
     name: '主页',
     component: () => import('@renderer/views/main-page/MainPage.vue'),
   },
-  {
-    path: '/tailwind-main',
-    name: 'Tailwind主页',
-    component: () => import('@renderer/views/main-page/MainPageTailwind.vue'),
-  },
-  {
-    path: '/test-tailwind',
-    name: 'Tailwind测试',
-    component: () => import('@renderer/views/test-tailwind/TestTailwind.vue'),
-  },
 ];
 
 export default routes;

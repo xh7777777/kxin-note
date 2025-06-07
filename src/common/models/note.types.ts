@@ -12,7 +12,7 @@ export interface NotePage {
   id: string;
   /** 页面标题 */
   title: string;
-  /** 页面图标 (emoji 或 URL) */
+  /** 页面图标 (emoji) */
   icon?: string;
   /** 页面封面图片 URL */
   cover?: string;
@@ -26,18 +26,8 @@ export interface NotePage {
   content: NoteContent;
   /** 页面元数据 */
   metadata: PageMetadata;
-  /** 页面状态 */
-  status: PageStatus;
-  /** 页面权限设置 */
-  permissions: PagePermission[];
-  /** 页面模板 ID */
-  templateId?: string;
-  /** 是否为模板页面 */
-  isTemplate?: boolean;
   /** 页面标签 */
   tags?: string[];
-  /** 页面属性集合 */
-  properties?: PageProperty[];
   /** 是否在侧边栏中展开 */
   isExpanded?: boolean;
   /** 是否为收藏页面 */
@@ -59,9 +49,7 @@ export interface NoteContent {
   version: string;
   /** 内容块数组 */
   blocks: NoteBlock[];
-  /** 内容哈希值，用于变更检测 */
-  hash?: string;
-  /** 内容长度统计 */
+  /** 内容统计 */
   stats?: ContentStats;
 }
 
@@ -80,8 +68,6 @@ export interface NoteBlock {
   createdAt?: number;
   /** 块更新时间 */
   updatedAt?: number;
-  /** 块配置参数 */
-  tunes?: Record<string, any>;
 }
 
 /**
@@ -102,30 +88,16 @@ export enum BlockType {
   DELIMITER = 'delimiter',
   /** 图片 */
   IMAGE = 'image',
-  /** 视频 */
-  VIDEO = 'video',
-  /** 音频 */
-  AUDIO = 'audio',
   /** 文件 */
   FILE = 'file',
   /** 链接预览 */
   LINK_PREVIEW = 'linkTool',
   /** 表格 */
   TABLE = 'table',
-  /** 数学公式 */
-  MATH = 'math',
   /** 待办事项 */
   CHECKLIST = 'checklist',
-  /** 嵌入内容 */
-  EMBED = 'embed',
   /** 子页面引用 */
   PAGE_REFERENCE = 'pageReference',
-  /** 数据库 */
-  DATABASE = 'database',
-  /** 画板 */
-  CANVAS = 'canvas',
-  /** 思维导图 */
-  MINDMAP = 'mindmap',
 }
 
 /**
@@ -139,11 +111,9 @@ export type BlockData =
   | QuoteBlockData
   | CodeBlockData
   | ImageBlockData
-  | VideoBlockData
   | TableBlockData
   | ChecklistBlockData
   | PageReferenceBlockData
-  | EmbedBlockData
   | Record<string, any>; // 兜底类型
 
 /**
@@ -153,7 +123,7 @@ export interface ParagraphBlockData {
   /** 段落文本内容 */
   text: string;
   /** 文本对齐方式 */
-  alignment?: 'left' | 'center' | 'right' | 'justify';
+  alignment?: 'left' | 'center' | 'right';
 }
 
 /**
@@ -164,8 +134,6 @@ export interface HeaderBlockData {
   text: string;
   /** 标题级别 (1-6) */
   level: 1 | 2 | 3 | 4 | 5 | 6;
-  /** 是否显示锚点 */
-  anchor?: boolean;
 }
 
 /**
@@ -186,8 +154,6 @@ export interface QuoteBlockData {
   text: string;
   /** 引用来源 */
   caption?: string;
-  /** 引用对齐方式 */
-  alignment?: 'left' | 'center';
 }
 
 /**
@@ -200,8 +166,6 @@ export interface CodeBlockData {
   language?: string;
   /** 是否显示行号 */
   showLineNumbers?: boolean;
-  /** 代码主题 */
-  theme?: string;
 }
 
 /**
@@ -216,24 +180,6 @@ export interface ImageBlockData {
   stretched?: boolean;
   /** 是否带边框 */
   withBorder?: boolean;
-  /** 是否带背景 */
-  withBackground?: boolean;
-}
-
-/**
- * 视频块数据
- */
-export interface VideoBlockData {
-  /** 视频文件信息 */
-  file: FileData;
-  /** 视频标题 */
-  caption?: string;
-  /** 是否自动播放 */
-  autoplay?: boolean;
-  /** 是否循环播放 */
-  loop?: boolean;
-  /** 是否静音 */
-  muted?: boolean;
 }
 
 /**
@@ -273,7 +219,7 @@ export interface PageReferenceBlockData {
   /** 引用的页面 ID */
   pageId: string;
   /** 显示模式 */
-  displayMode: 'inline' | 'embed' | 'preview';
+  displayMode: 'inline' | 'preview';
   /** 显示标题 */
   showTitle?: boolean;
   /** 显示图标 */
@@ -281,28 +227,10 @@ export interface PageReferenceBlockData {
 }
 
 /**
- * 嵌入内容块数据
- */
-export interface EmbedBlockData {
-  /** 嵌入服务类型 */
-  service: string;
-  /** 嵌入 URL */
-  source: string;
-  /** 嵌入代码 */
-  embed?: string;
-  /** 显示宽度 */
-  width?: number;
-  /** 显示高度 */
-  height?: number;
-  /** 标题 */
-  caption?: string;
-}
-
-/**
  * 文件数据结构
  */
 export interface FileData {
-  /** 文件 URL */
+  /** 文件 URL 或本地路径 */
   url: string;
   /** 文件名 */
   name?: string;
@@ -310,8 +238,6 @@ export interface FileData {
   size?: number;
   /** 文件类型 */
   type?: string;
-  /** 文件哈希 */
-  hash?: string;
   /** 上传时间 */
   uploadedAt?: Date;
 }
@@ -338,34 +264,14 @@ export interface ContentStats {
  * 页面元数据
  */
 export interface PageMetadata {
-  /** 创建者 ID */
-  createdBy: string;
   /** 创建时间 */
   createdAt: Date;
-  /** 最后编辑者 ID */
-  lastEditedBy: string;
   /** 最后编辑时间 */
-  lastEditedAt: Date;
-  /** 页面语言 */
-  language?: string;
-  /** SEO 描述 */
-  description?: string;
-  /** SEO 关键词 */
-  keywords?: string[];
-  /** 页面 URL 路径 */
-  slug?: string;
-  /** 发布状态 */
-  publishStatus: 'draft' | 'published' | 'scheduled' | 'archived';
-  /** 发布时间 */
-  publishedAt?: Date;
-  /** 页面版本号 */
-  version: number;
-  /** 访问次数 */
-  viewCount?: number;
-  /** 最后访问时间 */
-  lastViewedAt?: Date;
+  updatedAt: Date;
   /** 页面大小 (字节) */
   size?: number;
+  /** 页面状态 */
+  status: PageStatus;
 }
 
 /**
@@ -374,147 +280,12 @@ export interface PageMetadata {
 export enum PageStatus {
   /** 草稿 */
   DRAFT = 'draft',
-  /** 已发布 */
-  PUBLISHED = 'published',
+  /** 正常 */
+  NORMAL = 'normal',
   /** 已归档 */
   ARCHIVED = 'archived',
   /** 已删除 */
   DELETED = 'deleted',
-  /** 正在编辑 */
-  EDITING = 'editing',
-  /** 锁定中 */
-  LOCKED = 'locked',
-}
-
-/**
- * 页面权限定义
- */
-export interface PagePermission {
-  /** 权限对象 ID (用户或组织) */
-  subjectId: string;
-  /** 权限对象类型 */
-  subjectType: 'user' | 'group' | 'public';
-  /** 权限级别 */
-  permission: 'read' | 'write' | 'admin' | 'none';
-  /** 权限授予时间 */
-  grantedAt: Date;
-  /** 权限授予者 */
-  grantedBy: string;
-  /** 权限过期时间 */
-  expiresAt?: Date;
-}
-
-/**
- * 页面属性定义
- * 用于扩展页面的结构化数据
- */
-export interface PageProperty {
-  /** 属性 ID */
-  id: string;
-  /** 属性名称 */
-  name: string;
-  /** 属性类型 */
-  type: PropertyType;
-  /** 属性值 */
-  value: PropertyValue;
-  /** 是否必填 */
-  required?: boolean;
-  /** 属性选项 (用于选择类型) */
-  options?: PropertyOption[];
-}
-
-/**
- * 页面属性类型枚举
- */
-export enum PropertyType {
-  /** 文本 */
-  TEXT = 'text',
-  /** 数字 */
-  NUMBER = 'number',
-  /** 日期 */
-  DATE = 'date',
-  /** 选择 */
-  SELECT = 'select',
-  /** 多选 */
-  MULTI_SELECT = 'multi_select',
-  /** 复选框 */
-  CHECKBOX = 'checkbox',
-  /** URL */
-  URL = 'url',
-  /** 邮箱 */
-  EMAIL = 'email',
-  /** 电话 */
-  PHONE = 'phone',
-  /** 用户 */
-  PERSON = 'person',
-  /** 文件 */
-  FILES = 'files',
-  /** 关系 */
-  RELATION = 'relation',
-  /** 公式 */
-  FORMULA = 'formula',
-}
-
-/**
- * 属性值类型
- */
-export type PropertyValue =
-  | string
-  | number
-  | boolean
-  | Date
-  | string[]
-  | FileData[]
-  | any;
-
-/**
- * 属性选项定义
- */
-export interface PropertyOption {
-  /** 选项 ID */
-  id: string;
-  /** 选项名称 */
-  name: string;
-  /** 选项颜色 */
-  color?: string;
-}
-
-/**
- * 页面版本历史
- */
-export interface PageVersion {
-  /** 版本 ID */
-  id: string;
-  /** 版本号 */
-  version: number;
-  /** 页面内容快照 */
-  content: NoteContent;
-  /** 版本创建时间 */
-  createdAt: Date;
-  /** 版本创建者 */
-  createdBy: string;
-  /** 变更描述 */
-  changeDescription?: string;
-  /** 变更类型 */
-  changeType: 'create' | 'update' | 'delete' | 'restore';
-  /** 父版本 ID */
-  parentVersionId?: string;
-}
-
-/**
- * 页面搜索索引
- */
-export interface PageSearchIndex {
-  /** 页面 ID */
-  pageId: string;
-  /** 页面标题 */
-  title: string;
-  /** 页面内容文本 */
-  content: string;
-  /** 搜索权重 */
-  weight: number;
-  /** 更新时间 */
-  updatedAt: Date;
 }
 
 /**
@@ -523,22 +294,59 @@ export interface PageSearchIndex {
 export interface NoteSystemConfig {
   /** 自动保存间隔 (毫秒) */
   autoSaveInterval?: number;
-  /** 版本历史保留数量 */
-  maxVersionHistory?: number;
-  /** 是否启用协作编辑 */
-  enableCollaboration?: boolean;
-  /** 默认页面模板 */
-  defaultTemplate?: string;
+  /** 默认页面图标 */
+  defaultIcon?: string;
   /** 允许的文件类型 */
   allowedFileTypes?: string[];
   /** 最大文件大小 (字节) */
   maxFileSize?: number;
-  /** 是否启用全文搜索 */
-  enableFullTextSearch?: boolean;
+  /** 数据存储路径 */
+  dataPath?: string;
 }
 
 /**
- * 页面事件类型
+ * 页面搜索结果
+ */
+export interface SearchResult {
+  /** 页面 ID */
+  pageId: string;
+  /** 页面标题 */
+  title: string;
+  /** 匹配的内容摘要 */
+  snippet: string;
+  /** 匹配分数 */
+  score: number;
+}
+
+/**
+ * 笔记树节点
+ * 用于侧边栏显示的简化结构
+ */
+export interface NoteTreeNode {
+  /** 页面 ID */
+  id: string;
+  /** 页面标题 */
+  title: string;
+  /** 页面图标 */
+  icon?: string;
+  /** 父页面 ID */
+  parentId?: string;
+  /** 子页面 */
+  children?: NoteTreeNode[];
+  /** 层级深度 */
+  level: number;
+  /** 是否展开 */
+  isExpanded?: boolean;
+  /** 是否收藏 */
+  isFavorite?: boolean;
+  /** 是否归档 */
+  isArchived?: boolean;
+  /** 最后更新时间 */
+  updatedAt: Date;
+}
+
+/**
+ * 页面操作事件
  */
 export interface PageEvents {
   /** 页面创建事件 */
@@ -549,18 +357,4 @@ export interface PageEvents {
   'page:deleted': { pageId: string };
   /** 页面移动事件 */
   'page:moved': { pageId: string; oldParentId?: string; newParentId?: string };
-  /** 页面发布事件 */
-  'page:published': { pageId: string };
-  /** 页面归档事件 */
-  'page:archived': { pageId: string };
-  /** 页面恢复事件 */
-  'page:restored': { pageId: string; versionId: string };
-  /** 权限变更事件 */
-  'page:permission-changed': { pageId: string; permission: PagePermission };
-  /** 内容变更事件 */
-  'page:content-changed': {
-    pageId: string;
-    blockId: string;
-    changeType: 'add' | 'update' | 'delete';
-  };
 }
