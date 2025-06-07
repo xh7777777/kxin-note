@@ -9,6 +9,9 @@
       :notebooks="notebooks"
       :notes="notes"
       @add-notebook="addNotebook"
+      @toggle-dark-mode="toggleDarkMode"
+      @open-settings="openSettings"
+      @open-trash="openTrash"
     />
 
     <!-- 右侧内容区域 -->
@@ -51,51 +54,33 @@ import SideBar, { type Note, type Notebook } from './components/side-bar.vue';
 const searchQuery = ref('');
 const activeNoteId = ref<string | null>(null);
 const activeTab = ref('notebooks');
-const activeNotebook = ref<string | null>('1');
+const activeNotebook = ref<string | null>(null);
 
 // 模拟笔记本数据
-const notebooks = ref<Notebook[]>([
-  { id: '1', name: 'Work Notes', emoji: '💼', color: '#6366f1', noteCount: 12 },
-  { id: '2', name: 'Personal', emoji: '🏠', color: '#10b981', noteCount: 8 },
-  { id: '3', name: 'Learning', emoji: '📚', color: '#f59e0b', noteCount: 15 },
-  { id: '4', name: 'Ideas', emoji: '💡', color: '#ec4899', noteCount: 6 },
-  { id: '5', name: 'Travel', emoji: '✈️', color: '#8b5cf6', noteCount: 4 },
-]);
+const notebooks = ref<Notebook[]>([]);
 
 // 模拟笔记数据
-const notes = ref<Note[]>([
-  {
-    id: '1',
-    title: 'Project Planning Meeting',
-    preview:
-      'Discussed the Q1 roadmap and key milestones for the upcoming product launch...',
-    updatedAt: new Date('2024-01-15'),
-    tags: ['work', 'meeting'],
-    notebookId: '1',
-  },
-  {
-    id: '2',
-    title: 'Learning Vue 3 Composition API',
-    preview:
-      'The Composition API provides a more flexible way to organize component logic...',
-    updatedAt: new Date('2024-01-14'),
-    tags: ['vue', 'learning'],
-    notebookId: '3',
-  },
-  {
-    id: '3',
-    title: 'Weekend Trip Ideas',
-    preview:
-      'Planning a weekend getaway to the mountains. Need to check hiking trails...',
-    updatedAt: new Date('2024-01-13'),
-    tags: ['travel', 'personal'],
-    notebookId: '5',
-  },
-]);
+const notes = ref<Note[]>([]);
 
 // 方法
 const addNotebook = () => {
   console.log('添加新笔记本');
+};
+
+const toggleDarkMode = () => {
+  console.log('切换黑暗模式');
+  // 这里可以实现全局的黑暗模式切换逻辑
+  // 例如切换 CSS 类，更新 Pinia store 等
+};
+
+const openSettings = () => {
+  console.log('打开设置');
+  // 这里可以打开设置模态框或跳转到设置页面
+};
+
+const openTrash = () => {
+  console.log('打开垃圾桶');
+  // 这里可以显示已删除的笔记列表
 };
 </script>
 

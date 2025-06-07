@@ -28,192 +28,290 @@
       </div>
     </div>
 
-    <!-- 功能区域 -->
-    <div class="px-3 mb-4 flex-shrink-0">
-      <div class="flex items-center gap-2 px-3 py-2 mb-1">
-        <button
-          @click="toggleFeaturesExpanded"
-          class="w-3.5 h-3.5 text-gray-500 hover:text-gray-700 transition-all duration-300 ease-in-out transform cursor-pointer bg-transparent border-none p-0 flex items-center justify-center"
-          :class="{ 'rotate-90': featuresExpanded }"
-        >
-          <svg
-            class="w-3.5 h-3.5 stroke-2"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
+    <!-- 主要内容区域 -->
+    <div class="flex-1 min-h-0 flex flex-col">
+      <!-- 功能区域 -->
+      <div class="px-3 mb-4 flex-shrink-0">
+        <div class="flex items-center gap-2 px-3 py-2 mb-1">
+          <button
+            @click="toggleFeaturesExpanded"
+            class="w-3.5 h-3.5 text-gray-500 hover:text-gray-700 transition-all duration-300 ease-in-out transform cursor-pointer bg-transparent border-none p-0 flex items-center justify-center"
+            :class="{ 'rotate-90': featuresExpanded }"
           >
-            <polyline points="9,18 15,12 9,6"></polyline>
-          </svg>
-        </button>
-        <span
-          class="text-xs font-semibold text-gray-500 uppercase tracking-wider flex-1 cursor-pointer"
-          @click="toggleFeaturesExpanded"
-        >
-          Features
-        </span>
-      </div>
-
-      <!-- Features 内容区域 -->
-      <div
-        class="overflow-hidden transition-all duration-300 ease-in-out"
-        :style="{
-          maxHeight: featuresExpanded ? featuresContentHeight + 'px' : '0px',
-          opacity: featuresExpanded ? 1 : 0,
-        }"
-        ref="featuresContent"
-      >
-        <div class="space-y-0.5">
-          <!-- Home -->
-          <div
-            class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
-            :class="
-              activeTab === 'home'
-                ? 'bg-indigo-600 text-white'
-                : 'text-gray-700 hover:bg-gray-200'
-            "
-            @click="handleSetActiveTab('home')"
-          >
-            <div class="text-base w-5 text-center">🏠</div>
-            <span class="text-sm flex-1">Home</span>
-          </div>
-
-          <!-- Bookshelf -->
-          <div
-            class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
-            :class="
-              activeTab === 'bookshelf'
-                ? 'bg-indigo-600 text-white'
-                : 'text-gray-700 hover:bg-gray-200'
-            "
-            @click="handleSetActiveTab('notebooks')"
-          >
-            <div class="text-base w-5 text-center">📚</div>
-            <span class="text-sm flex-1">My Bookshelf</span>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 笔记本区域 -->
-    <div class="px-3 mb-4 flex-shrink-0">
-      <div class="flex items-center gap-2 px-3 py-2 mb-1">
-        <button
-          @click="toggleNotebooksExpanded"
-          class="w-3.5 h-3.5 text-gray-500 hover:text-gray-700 transition-all duration-300 ease-in-out transform cursor-pointer bg-transparent border-none p-0 flex items-center justify-center"
-          :class="{ 'rotate-90': notebooksExpanded }"
-        >
-          <svg
-            class="w-3.5 h-3.5 stroke-2"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-          >
-            <polyline points="9,18 15,12 9,6"></polyline>
-          </svg>
-        </button>
-        <span
-          class="text-xs font-semibold text-gray-500 uppercase tracking-wider flex-1 cursor-pointer"
-          @click="toggleNotebooksExpanded"
-        >
-          Notebooks
-        </span>
-        <button
-          class="w-4 h-4 border-none bg-transparent cursor-pointer flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity duration-200"
-          @click="handleAddNotebook"
-        >
-          <svg
-            class="w-3 h-3 text-gray-500 stroke-2"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-          >
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-        </button>
-      </div>
-
-      <!-- Notebooks 内容区域 -->
-      <div
-        class="overflow-hidden transition-all duration-300 ease-in-out"
-        :style="{
-          maxHeight: notebooksExpanded ? notebooksContentHeight + 'px' : '0px',
-          opacity: notebooksExpanded ? 1 : 0,
-        }"
-        ref="notebooksContent"
-      >
-        <div class="space-y-0.5">
-          <div
-            v-for="notebook in notebooks"
-            :key="notebook.id"
-            class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
-            :class="
-              activeNotebook === notebook.id
-                ? 'bg-indigo-600 text-white'
-                : 'text-gray-700 hover:bg-gray-200'
-            "
-            @click="handleSelectNotebook(notebook.id)"
-          >
-            <div
-              class="w-5 h-5 rounded flex items-center justify-center text-xs"
-              :style="{ backgroundColor: notebook.color }"
+            <svg
+              class="w-3.5 h-3.5 stroke-2"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
             >
-              {{ notebook.emoji }}
-            </div>
-            <span class="text-sm flex-1">{{ notebook.name }}</span>
-            <span
-              class="text-xs px-1.5 py-0.5 rounded-xl font-medium min-w-[20px] text-center"
-              :class="
-                activeNotebook === notebook.id
-                  ? 'bg-white bg-opacity-20 text-white'
-                  : 'bg-gray-100 text-gray-500'
-              "
-            >
-              {{ notebook.noteCount }}
-            </span>
-          </div>
+              <polyline points="9,18 15,12 9,6"></polyline>
+            </svg>
+          </button>
+          <span
+            class="text-xs font-semibold text-gray-500 uppercase tracking-wider flex-1 cursor-pointer"
+            @click="toggleFeaturesExpanded"
+          >
+            Features
+          </span>
         </div>
-      </div>
-    </div>
 
-    <!-- 笔记列表区域 -->
-    <div
-      v-if="activeNotebook && notebooksExpanded"
-      class="flex-1 min-h-0 flex flex-col"
-    >
-      <div
-        class="flex-1 overflow-y-auto px-3 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
-      >
+        <!-- Features 内容区域 -->
         <div
-          v-for="note in filteredNotes"
-          :key="note.id"
-          class="p-3 rounded-md cursor-pointer transition-all duration-200 mb-1 border border-transparent hover:bg-gray-100"
-          :class="activeNoteId === note.id ? 'bg-blue-50 border-blue-200' : ''"
-          @click="handleSelectNote(note.id)"
+          class="overflow-hidden transition-all duration-300 ease-in-out"
+          :style="{
+            maxHeight: featuresExpanded
+              ? Math.min(featuresContentHeight, 200) + 'px'
+              : '0px',
+            opacity: featuresExpanded ? 1 : 0,
+          }"
         >
-          <div>
-            <h4 class="text-sm font-medium text-gray-900 mb-1 leading-tight">
-              {{ note.title }}
-            </h4>
-            <p class="text-xs text-gray-500 mb-2 leading-snug line-clamp-2">
-              {{ note.preview }}
-            </p>
-            <div class="flex justify-between items-center">
-              <span class="text-xs text-gray-400">
-                {{ formatDate(note.updatedAt) }}
-              </span>
-              <div v-if="note.tags?.length" class="flex gap-1">
-                <span
-                  v-for="tag in note.tags.slice(0, 2)"
-                  :key="tag"
-                  class="bg-gray-100 text-gray-500 text-xs px-1.5 py-0.5 rounded-xl font-medium"
+          <div
+            class="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+            :style="{ maxHeight: '200px' }"
+            ref="featuresContent"
+          >
+            <div class="space-y-0.5">
+              <!-- Home -->
+              <div
+                class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
+                :class="
+                  activeTab === 'home'
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-200'
+                "
+                @click="handleSetActiveTab('home')"
+              >
+                <div class="text-base w-5 text-center">🏠</div>
+                <span class="text-sm flex-1">Home</span>
+              </div>
+
+              <!-- Bookshelf -->
+              <div
+                class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
+                :class="
+                  activeTab === 'bookshelf'
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-200'
+                "
+                @click="handleSetActiveTab('notebooks')"
+              >
+                <div class="text-base w-5 text-center">📚</div>
+                <span class="text-sm flex-1">My Bookshelf</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 笔记本区域 -->
+      <div class="px-3 mb-4 flex-shrink-0">
+        <div class="flex items-center gap-2 px-3 py-2 mb-1">
+          <button
+            @click="toggleNotebooksExpanded"
+            class="w-3.5 h-3.5 text-gray-500 hover:text-gray-700 transition-all duration-300 ease-in-out transform cursor-pointer bg-transparent border-none p-0 flex items-center justify-center"
+            :class="{ 'rotate-90': notebooksExpanded }"
+          >
+            <svg
+              class="w-3.5 h-3.5 stroke-2"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <polyline points="9,18 15,12 9,6"></polyline>
+            </svg>
+          </button>
+          <span
+            class="text-xs font-semibold text-gray-500 uppercase tracking-wider flex-1 cursor-pointer"
+            @click="toggleNotebooksExpanded"
+          >
+            Notebooks
+          </span>
+          <button
+            class="w-4 h-4 border-none bg-transparent cursor-pointer flex items-center justify-center opacity-60 hover:opacity-100 transition-opacity duration-200"
+            @click="handleAddNotebook"
+          >
+            <svg
+              class="w-3 h-3 text-gray-500 stroke-2"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Notebooks 内容区域 -->
+        <div
+          class="overflow-hidden transition-all duration-300 ease-in-out"
+          :style="{
+            maxHeight: notebooksExpanded
+              ? Math.min(notebooksContentHeight, 250) + 'px'
+              : '0px',
+            opacity: notebooksExpanded ? 1 : 0,
+          }"
+        >
+          <div
+            class="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+            :style="{ maxHeight: '250px' }"
+            ref="notebooksContent"
+          >
+            <div class="space-y-0.5">
+              <div
+                v-for="notebook in notebooks"
+                :key="notebook.id"
+                class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
+                :class="
+                  activeNotebook === notebook.id
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-200'
+                "
+                @click="handleSelectNotebook(notebook.id)"
+              >
+                <div
+                  class="w-5 h-5 rounded flex items-center justify-center text-xs"
+                  :style="{ backgroundColor: notebook.color }"
                 >
-                  {{ tag }}
+                  {{ notebook.emoji }}
+                </div>
+                <span class="text-sm flex-1">{{ notebook.name }}</span>
+                <span
+                  class="text-xs px-1.5 py-0.5 rounded-xl font-medium min-w-[20px] text-center"
+                  :class="
+                    activeNotebook === notebook.id
+                      ? 'bg-white bg-opacity-20 text-white'
+                      : 'bg-gray-100 text-gray-500'
+                  "
+                >
+                  {{ notebook.noteCount }}
                 </span>
               </div>
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- 笔记列表区域 -->
+      <div
+        v-if="activeNotebook && notebooksExpanded"
+        class="flex-1 min-h-0 flex flex-col"
+      >
+        <div
+          class="flex-1 overflow-y-auto px-3 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+        >
+          <div
+            v-for="note in filteredNotes"
+            :key="note.id"
+            class="p-3 rounded-md cursor-pointer transition-all duration-200 mb-1 border border-transparent hover:bg-gray-100"
+            :class="
+              activeNoteId === note.id ? 'bg-blue-50 border-blue-200' : ''
+            "
+            @click="handleSelectNote(note.id)"
+          >
+            <div>
+              <h4 class="text-sm font-medium text-gray-900 mb-1 leading-tight">
+                {{ note.title }}
+              </h4>
+              <p class="text-xs text-gray-500 mb-2 leading-snug line-clamp-2">
+                {{ note.preview }}
+              </p>
+              <div class="flex justify-between items-center">
+                <span class="text-xs text-gray-400">
+                  {{ formatDate(note.updatedAt) }}
+                </span>
+                <div v-if="note.tags?.length" class="flex gap-1">
+                  <span
+                    v-for="tag in note.tags.slice(0, 2)"
+                    :key="tag"
+                    class="bg-gray-100 text-gray-500 text-xs px-1.5 py-0.5 rounded-xl font-medium"
+                  >
+                    {{ tag }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部工具栏 -->
+    <div class="flex-shrink-0 px-3 py-3 border-t border-gray-200 bg-gray-50">
+      <div class="flex items-center justify-between gap-2">
+        <!-- 黑暗模式切换 -->
+        <button
+          @click="handleToggleDarkMode"
+          class="flex items-center justify-center w-8 h-8 rounded-md transition-all duration-200 hover:bg-gray-200 text-gray-600 hover:text-gray-800"
+          title="Toggle Dark Mode"
+        >
+          <svg
+            v-if="!isDarkMode"
+            class="w-4 h-4 stroke-2"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg
+            v-else
+            class="w-4 h-4 stroke-2"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+
+        <!-- 设置 -->
+        <button
+          @click="handleOpenSettings"
+          class="flex items-center justify-center w-8 h-8 rounded-md transition-all duration-200 hover:bg-gray-200 text-gray-600 hover:text-gray-800"
+          title="Settings"
+        >
+          <svg
+            class="w-4 h-4 stroke-2"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <circle cx="12" cy="12" r="3"></circle>
+            <path
+              d="M12 1v6m0 6v6m11-7h-6m-6 0H1m5.636-5.636l4.243 4.243m4.243 4.243l4.243 4.243M7.757 16.243l4.243-4.243"
+            ></path>
+          </svg>
+        </button>
+
+        <!-- 垃圾桶 -->
+        <button
+          @click="handleOpenTrash"
+          class="flex items-center justify-center w-8 h-8 rounded-md transition-all duration-200 hover:bg-gray-200 text-gray-600 hover:text-gray-800"
+          title="Trash"
+        >
+          <svg
+            class="w-4 h-4 stroke-2"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <polyline points="3,6 5,6 21,6"></polyline>
+            <path
+              d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+            ></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+        </button>
       </div>
     </div>
   </div>
@@ -256,11 +354,17 @@ const emit = defineEmits<{
   'update:activeNotebook': [value: string | null];
   'update:activeNoteId': [value: string | null];
   'add-notebook': [];
+  'toggle-dark-mode': [];
+  'open-settings': [];
+  'open-trash': [];
 }>();
 
 // 展开收缩状态
 const featuresExpanded = ref(true);
 const notebooksExpanded = ref(true);
+
+// 黑暗模式状态
+const isDarkMode = ref(false);
 
 // 内容区域引用和高度
 const featuresContent = ref<HTMLElement>();
@@ -317,6 +421,7 @@ const restoreExpandedState = () => {
   const savedNotebooksState = localStorage.getItem(
     'sidebar-notebooks-expanded'
   );
+  const savedDarkMode = localStorage.getItem('dark-mode');
 
   if (savedFeaturesState !== null) {
     featuresExpanded.value = savedFeaturesState === 'true';
@@ -324,6 +429,10 @@ const restoreExpandedState = () => {
 
   if (savedNotebooksState !== null) {
     notebooksExpanded.value = savedNotebooksState === 'true';
+  }
+
+  if (savedDarkMode !== null) {
+    isDarkMode.value = savedDarkMode === 'true';
   }
 };
 
@@ -395,6 +504,21 @@ const handleAddNotebook = () => {
     notebooksExpanded.value = true;
     localStorage.setItem('sidebar-notebooks-expanded', 'true');
   }
+};
+
+// 工具栏方法
+const handleToggleDarkMode = () => {
+  isDarkMode.value = !isDarkMode.value;
+  localStorage.setItem('dark-mode', String(isDarkMode.value));
+  emit('toggle-dark-mode');
+};
+
+const handleOpenSettings = () => {
+  emit('open-settings');
+};
+
+const handleOpenTrash = () => {
+  emit('open-trash');
 };
 
 const formatDate = (date: Date) => {
