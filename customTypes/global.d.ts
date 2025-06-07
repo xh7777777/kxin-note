@@ -58,6 +58,23 @@ interface NoteAPIResponse<T = any> {
   success: boolean;
   data?: T;
   error?: string;
+  message?: string;
+}
+
+/**
+ * 笔记索引条目
+ */
+interface NoteIndexItem {
+  id: string;
+  title: string;
+  icon?: string;
+  filePath: string;
+  updatedAt: string;
+  createdAt: string;
+  parentId?: string;
+  level: number;
+  isFavorite?: boolean;
+  isArchived?: boolean;
 }
 
 /**
@@ -83,10 +100,16 @@ interface NoteAPI {
   getNote: (noteId: string) => Promise<NoteAPIResponse<NotePage>>;
 
   /**
-   * 获取所有笔记
-   * @returns Promise<NoteAPIResponse<NotePage[]>>
+   * 获取所有笔记（从索引）
+   * @returns Promise<NoteAPIResponse<NoteIndexItem[]>>
    */
-  getAllNotes: () => Promise<NoteAPIResponse<NotePage[]>>;
+  getAllNotes: () => Promise<NoteAPIResponse<NoteIndexItem[]>>;
+
+  /**
+   * 重建笔记索引
+   * @returns Promise<NoteAPIResponse>
+   */
+  rebuildIndex: () => Promise<NoteAPIResponse>;
 }
 
 declare global {

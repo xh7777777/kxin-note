@@ -358,3 +358,25 @@ export interface PageEvents {
   /** 页面移动事件 */
   'page:moved': { pageId: string; oldParentId?: string; newParentId?: string };
 }
+
+export interface NoteIndexItem {
+  id: string;
+  title: string;
+  icon?: string;
+  filePath: string;
+  updatedAt: string;
+  createdAt: string;
+  parentId?: string;
+  level: number;
+  isFavorite?: boolean;
+  isArchived?: boolean;
+}
+
+/**
+ * 笔记索引接口
+ */
+export interface NoteIndex {
+  version: string;
+  lastUpdated: string;
+  notes: NoteIndexItem[];
+}

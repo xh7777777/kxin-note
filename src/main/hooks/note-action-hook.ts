@@ -9,8 +9,14 @@ import {
   PageStatus,
   BlockType,
   NoteTreeNode,
+  NoteIndexItem,
+  NoteIndex,
 } from '../../common/models/note.types';
 import { v4 as uuidv4 } from 'uuid';
+
+/**
+ * 笔记索引条目接口
+ */
 
 /**
  * 获取项目根目录
@@ -37,6 +43,13 @@ const getNotesDataPath = () => {
 };
 
 /**
+ * 获取笔记索引文件路径
+ */
+const getNotesIndexPath = () => {
+  return join(getNotesDataPath(), 'notes-index.json');
+};
+
+/**
  * 确保目录存在
  */
 const ensureDirectoryExists = async (dirPath: string) => {
@@ -52,6 +65,134 @@ const ensureDirectoryExists = async (dirPath: string) => {
  */
 const generateUniqueId = (): string => {
   return uuidv4();
+};
+
+/**
+ * 加载笔记索引
+ */
+const loadNotesIndex = async (): Promise<NoteIndex> => {
+  const indexPath = getNotesIndexPath();
+
+  try {
+    const data = await fs.readFile(indexPath, 'utf-8');
+    return JSON.parse(data);
+  } catch (error) {
+    // 如果索引文件不存在，创建一个新的
+    const newIndex: NoteIndex = {
+      version: '1.0.0',
+      lastUpdated: new Date().toISOString(),
+      notes: [],
+    };
+    await saveNotesIndex(newIndex);
+    return newIndex;
+  }
+};
+
+/**
+ * 保存笔记索引
+ */
+const saveNotesIndex = async (index: NoteIndex): Promise<void> => {
+  const indexPath = getNotesIndexPath();
+  index.lastUpdated = new Date().toISOString();
+  await fs.writeFile(indexPath, JSON.stringify(index, null, 2), 'utf-8');
+};
+
+/**
+ * 更新笔记索引中的条目
+ */
+const updateNoteInIndex = async (note: NotePage): Promise<void> => {
+  const index = await loadNotesIndex();
+  const filePath = join(getNotesDataPath(), `${note.id}.json`);
+
+  const indexItem: NoteIndexItem = {
+    id: note.id,
+    title: note.title,
+    icon: note.icon,
+    filePath,
+    updatedAt: note.metadata.updatedAt.toISOString(),
+    createdAt: note.metadata.createdAt.toISOString(),
+    parentId: note.parentId,
+    level: note.level,
+    isFavorite: note.isFavorite,
+    isArchived: note.isArchived,
+  };
+
+  // 查找是否已存在
+  const existingIndex = index.notes.findIndex(item => item.id === note.id);
+
+  if (existingIndex >= 0) {
+    // 更新现有条目
+    index.notes[existingIndex] = indexItem;
+  } else {
+    // 添加新条目
+    index.notes.push(indexItem);
+  }
+
+  // 按更新时间倒序排列
+  index.notes.sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+
+  await saveNotesIndex(index);
+};
+
+/**
+ * 从索引中删除笔记条目
+ */
+const removeNoteFromIndex = async (noteId: string): Promise<void> => {
+  const index = await loadNotesIndex();
+  index.notes = index.notes.filter(item => item.id !== noteId);
+  await saveNotesIndex(index);
+};
+
+/**
+ * 重建笔记索引
+ */
+const rebuildNotesIndex = async (): Promise<void> => {
+  const notesPath = getNotesDataPath();
+  await ensureDirectoryExists(notesPath);
+
+  const files = await fs.readdir(notesPath);
+  const notes: NoteIndexItem[] = [];
+
+  for (const file of files) {
+    if (file.endsWith('.json') && file !== 'notes-index.json') {
+      try {
+        const filePath = join(notesPath, file);
+        const data = await fs.readFile(filePath, 'utf-8');
+        const note = JSON.parse(data);
+
+        notes.push({
+          id: note.id,
+          title: note.title,
+          icon: note.icon,
+          filePath,
+          updatedAt: note.metadata.updatedAt,
+          createdAt: note.metadata.createdAt,
+          parentId: note.parentId,
+          level: note.level,
+          isFavorite: note.isFavorite,
+          isArchived: note.isArchived,
+        });
+      } catch (error) {
+        console.error(`Failed to process note file ${file}:`, error);
+      }
+    }
+  }
+
+  // 按更新时间倒序排列
+  notes.sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+
+  const index: NoteIndex = {
+    version: '1.0.0',
+    lastUpdated: new Date().toISOString(),
+    notes,
+  };
+
+  await saveNotesIndex(index);
+  console.log(`Rebuilt notes index with ${notes.length} notes`);
 };
 
 /**
@@ -128,6 +269,9 @@ const createNewNote = async (
   // 保存笔记到文件系统
   await saveNoteToFile(newNote);
 
+  // 更新索引
+  await updateNoteInIndex(newNote);
+
   return newNote;
 };
 
@@ -174,42 +318,14 @@ const loadNoteById = async (noteId: string): Promise<NotePage> => {
 };
 
 /**
- * 获取所有笔记
+ * 获取所有笔记（从索引中读取）
  */
-const getAllNotes = async (): Promise<NotePage[]> => {
-  const notesPath = getNotesDataPath();
-
+const getAllNotes = async (): Promise<NoteIndexItem[]> => {
   try {
-    await ensureDirectoryExists(notesPath);
-    const files = await fs.readdir(notesPath);
-    const notes = [];
-
-    for (const file of files) {
-      if (file.endsWith('.json')) {
-        try {
-          const filePath = join(notesPath, file);
-          const data = await fs.readFile(filePath, 'utf-8');
-          const note = JSON.parse(data);
-
-          // 转换日期字符串回 Date 对象
-          note.metadata.createdAt = new Date(note.metadata.createdAt);
-          note.metadata.updatedAt = new Date(note.metadata.updatedAt);
-
-          notes.push(note);
-        } catch (error) {
-          console.error(`Failed to load note ${file}:`, error);
-        }
-      }
-    }
-
-    // 按更新时间倒序排列
-    notes.sort(
-      (a, b) => b.metadata.updatedAt.getTime() - a.metadata.updatedAt.getTime()
-    );
-
-    return notes;
+    const index = await loadNotesIndex();
+    return index.notes;
   } catch (error) {
-    console.error('Failed to load notes:', error);
+    console.error('Failed to load notes from index:', error);
     return [];
   }
 };
@@ -223,8 +339,19 @@ const initializeStorageDirectories = async () => {
 
     await ensureDirectoryExists(notesPath);
 
+    // 检查是否需要重建索引
+    const indexPath = getNotesIndexPath();
+    try {
+      await fs.access(indexPath);
+      console.log('Notes index found');
+    } catch {
+      console.log('Notes index not found, rebuilding...');
+      await rebuildNotesIndex();
+    }
+
     console.log('Storage directories initialized:');
     console.log('  Notes:', notesPath);
+    console.log('  Index:', indexPath);
   } catch (error) {
     console.error('Failed to initialize storage directories:', error);
   }
@@ -262,7 +389,7 @@ export const registerNoteActionHandlers = () => {
     }
   });
 
-  // 获取所有笔记
+  // 获取所有笔记（从索引）
   ipcMain.handle('notes:getAll', async () => {
     try {
       const notes = await getAllNotes();
@@ -272,7 +399,26 @@ export const registerNoteActionHandlers = () => {
       return { success: false, error: error.message, data: [] };
     }
   });
+
+  // 重建笔记索引
+  ipcMain.handle('notes:rebuildIndex', async () => {
+    try {
+      await rebuildNotesIndex();
+      return { success: true, message: 'Index rebuilt successfully' };
+    } catch (error) {
+      console.error('Failed to rebuild index:', error);
+      return { success: false, error: error.message };
+    }
+  });
 };
 
 // 导出相关函数供其他模块使用
-export { createNewNote, saveNoteToFile, loadNoteById, getAllNotes };
+export {
+  createNewNote,
+  saveNoteToFile,
+  loadNoteById,
+  getAllNotes,
+  rebuildNotesIndex,
+  updateNoteInIndex,
+  removeNoteFromIndex,
+};

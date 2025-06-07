@@ -43,6 +43,9 @@ contextBridge.exposeInMainWorld('noteAPI', {
 
   // 获取所有笔记
   getAllNotes: () => ipcRenderer.invoke('notes:getAll'),
+
+  // 重建笔记索引
+  rebuildIndex: () => ipcRenderer.invoke('notes:rebuildIndex'),
 });
 
 contextBridge.exposeInMainWorld('systemInfo', {
