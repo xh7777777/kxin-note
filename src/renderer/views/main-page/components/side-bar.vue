@@ -112,7 +112,7 @@
                     ? 'bg-indigo-600 text-white'
                     : 'text-gray-700 hover:bg-gray-200'
                 "
-                @click="handleSetActiveTab('notebooks')"
+                @click="handleSetActiveTab('notePages')"
               >
                 <div class="text-base w-5 text-center">📚</div>
                 <span class="text-sm flex-1">My Bookshelf</span>
@@ -146,8 +146,8 @@
             Notebooks
           </span>
           <button
-            class="flex items-center justify-center w-6 h-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-all duration-200 shadow-sm hover:shadow-md"
-            @click="handleAddNotebook"
+            class="flex items-center justify-center w-6 h-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
+            @click="handleAddNote"
             title="Add New Notebook"
           >
             <svg
@@ -179,11 +179,11 @@
           >
             <div class="space-y-0.5">
               <div
-                v-for="notebook in notebooks"
+                v-for="notebook in notePages"
                 :key="notebook.id"
                 class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
                 :class="
-                  activeNotebook === notebook.id
+                  activeNotePage === notebook.id
                     ? 'bg-indigo-600 text-white'
                     : 'text-gray-700 hover:bg-gray-200'
                 "
@@ -191,64 +191,10 @@
               >
                 <div
                   class="w-5 h-5 rounded flex items-center justify-center text-xs"
-                  :style="{ backgroundColor: notebook.color }"
                 >
-                  {{ notebook.emoji }}
+                  {{ notebook.icon }}
                 </div>
-                <span class="text-sm flex-1">{{ notebook.name }}</span>
-                <span
-                  class="text-xs px-1.5 py-0.5 rounded-xl font-medium min-w-[20px] text-center"
-                  :class="
-                    activeNotebook === notebook.id
-                      ? 'bg-white bg-opacity-20 text-white'
-                      : 'bg-gray-100 text-gray-500'
-                  "
-                >
-                  {{ notebook.noteCount }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 笔记列表区域 -->
-      <div
-        v-if="activeNotebook && notebooksExpanded"
-        class="flex-1 min-h-0 flex flex-col"
-      >
-        <div
-          class="flex-1 overflow-y-auto px-3 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
-        >
-          <div
-            v-for="note in filteredNotes"
-            :key="note.id"
-            class="p-3 rounded-md cursor-pointer transition-all duration-200 mb-1 border border-transparent hover:bg-gray-100"
-            :class="
-              activeNoteId === note.id ? 'bg-blue-50 border-blue-200' : ''
-            "
-            @click="handleSelectNote(note.id)"
-          >
-            <div>
-              <h4 class="text-sm font-medium text-gray-900 mb-1 leading-tight">
-                {{ note.title }}
-              </h4>
-              <p class="text-xs text-gray-500 mb-2 leading-snug line-clamp-2">
-                {{ note.preview }}
-              </p>
-              <div class="flex justify-between items-center">
-                <span class="text-xs text-gray-400">
-                  {{ formatDate(note.updatedAt) }}
-                </span>
-                <div v-if="note.tags?.length" class="flex gap-1">
-                  <span
-                    v-for="tag in note.tags.slice(0, 2)"
-                    :key="tag"
-                    class="bg-gray-100 text-gray-500 text-xs px-1.5 py-0.5 rounded-xl font-medium"
-                  >
-                    {{ tag }}
-                  </span>
-                </div>
+                <span class="text-sm flex-1">{{ notebook.title }}</span>
               </div>
             </div>
           </div>
@@ -339,41 +285,23 @@
 
 <script setup lang="ts">
 import { computed, ref, nextTick, onMounted, watch } from 'vue';
-
-export interface Note {
-  id: string;
-  title: string;
-  preview: string;
-  updatedAt: Date;
-  tags?: string[];
-  notebookId: string;
-}
-
-export interface Notebook {
-  id: string;
-  name: string;
-  emoji: string;
-  color: string;
-  noteCount: number;
-}
+import { NotePage, NoteContent } from '../../../../common/models/note.types';
 
 // Props
 const props = defineProps<{
   searchQuery: string;
   activeTab: string;
-  activeNotebook: string | null;
+  activeNotePage: string | null;
   activeNoteId: string | null;
-  notebooks: Notebook[];
-  notes: Note[];
+  notePages: NotePage[];
 }>();
 
 // Emits
 const emit = defineEmits<{
   'update:searchQuery': [value: string];
   'update:activeTab': [value: string];
-  'update:activeNotebook': [value: string | null];
+  'update:activeNotePage': [value: string | null];
   'update:activeNoteId': [value: string | null];
-  'add-notebook': [];
   'add-note': [];
   'toggle-dark-mode': [];
   'open-settings': [];
@@ -431,7 +359,7 @@ const toggleNotebooksExpanded = () => {
 
   // 保存状态到本地存储
   localStorage.setItem(
-    'sidebar-notebooks-expanded',
+    'sidebar-note-pages-expanded',
     String(notebooksExpanded.value)
   );
 };
@@ -440,7 +368,7 @@ const toggleNotebooksExpanded = () => {
 const restoreExpandedState = () => {
   const savedFeaturesState = localStorage.getItem('sidebar-features-expanded');
   const savedNotebooksState = localStorage.getItem(
-    'sidebar-notebooks-expanded'
+    'sidebar-note-pages-expanded'
   );
   const savedDarkMode = localStorage.getItem('dark-mode');
 
@@ -459,33 +387,12 @@ const restoreExpandedState = () => {
 
 // 监听笔记本数据变化，重新计算高度
 watch(
-  () => props.notebooks,
+  () => props.notePages,
   () => {
     calculateContentHeight();
   },
   { deep: true }
 );
-
-// 计算属性：过滤后的笔记
-const filteredNotes = computed(() => {
-  let filtered = props.notes;
-
-  if (props.activeNotebook) {
-    filtered = filtered.filter(
-      note => note.notebookId === props.activeNotebook
-    );
-  }
-
-  if (props.searchQuery) {
-    filtered = filtered.filter(
-      note =>
-        note.title.toLowerCase().includes(props.searchQuery.toLowerCase()) ||
-        note.preview.toLowerCase().includes(props.searchQuery.toLowerCase())
-    );
-  }
-
-  return filtered;
-});
 
 // 搜索查询的双向绑定
 const searchQuery = computed({
@@ -496,20 +403,20 @@ const searchQuery = computed({
 // 方法
 const handleSetActiveTab = (tab: string) => {
   emit('update:activeTab', tab);
-  if (tab !== 'notebooks') {
-    emit('update:activeNotebook', null);
+  if (tab !== 'notePages') {
+    emit('update:activeNotePage', null);
   }
 };
 
 const handleSelectNotebook = (notebookId: string) => {
-  emit('update:activeNotebook', notebookId);
-  emit('update:activeTab', 'notebooks');
+  emit('update:activeNotePage', notebookId);
+  emit('update:activeTab', 'notePages');
   emit('update:activeNoteId', null);
 
   // 如果笔记本区域是收缩状态，自动展开
   if (!notebooksExpanded.value) {
     notebooksExpanded.value = true;
-    localStorage.setItem('sidebar-notebooks-expanded', 'true');
+    localStorage.setItem('sidebar-notePages-expanded', 'true');
   }
 };
 
@@ -517,25 +424,15 @@ const handleSelectNote = (noteId: string) => {
   emit('update:activeNoteId', noteId);
 };
 
-const handleAddNotebook = () => {
-  emit('add-notebook');
-
-  // 如果笔记本区域是收缩状态，自动展开
-  if (!notebooksExpanded.value) {
-    notebooksExpanded.value = true;
-    localStorage.setItem('sidebar-notebooks-expanded', 'true');
-  }
-};
-
 const handleAddNote = () => {
   emit('add-note');
 
   // 如果没有选中笔记本，可以提示用户先选择笔记本
-  if (!props.activeNotebook) {
+  if (!props.activeNotePage) {
     // 可以显示提示或自动展开笔记本区域
     if (!notebooksExpanded.value) {
       notebooksExpanded.value = true;
-      localStorage.setItem('sidebar-notebooks-expanded', 'true');
+      localStorage.setItem('sidebar-notePages-expanded', 'true');
     }
   }
 };

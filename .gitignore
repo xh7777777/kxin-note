@@ -14,6 +14,9 @@ coverage/
 # Lint cache
 .eslintcache
 
+# Development note data (assets directory)
+assets/notes/**/*.json
+
 # Editor directories and files
 .idea
 *.suo

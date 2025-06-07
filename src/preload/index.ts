@@ -32,6 +32,19 @@ function getIpcRenderer() {
 
 contextBridge.exposeInMainWorld('ipcRendererChannel', getIpcRenderer());
 
+// 暴露笔记操作API
+contextBridge.exposeInMainWorld('noteAPI', {
+  // 创建新笔记
+  createNote: (title?: string, parentId?: string) =>
+    ipcRenderer.invoke('note:create', title, parentId),
+
+  // 获取笔记
+  getNote: (noteId: string) => ipcRenderer.invoke('note:get', noteId),
+
+  // 获取所有笔记
+  getAllNotes: () => ipcRenderer.invoke('notes:getAll'),
+});
+
 contextBridge.exposeInMainWorld('systemInfo', {
   platform: platform(),
   release: release(),

@@ -4,11 +4,9 @@
     <SideBar
       :search-query="searchQuery"
       :active-tab="activeTab"
-      :active-notebook="activeNotebook"
+      :active-note-page="activeNotePage"
       :active-note-id="activeNoteId"
-      :notebooks="notebooks"
-      :notes="notes"
-      @add-notebook="addNotebook"
+      :note-pages="notePages"
       @add-note="addNote"
       @toggle-dark-mode="toggleDarkMode"
       @open-settings="openSettings"
@@ -49,29 +47,29 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import SideBar, { type Note, type Notebook } from './components/side-bar.vue';
+import SideBar from './components/side-bar.vue';
+import { useNotes } from './hooks/useNotes';
+import type { NotePage } from '../../../common/models/note.types';
+
+const { notePages, activeNote, createNote } = useNotes();
 
 // 响应式数据
 const searchQuery = ref('');
 const activeNoteId = ref<string | null>(null);
-const activeTab = ref('notebooks');
-const activeNotebook = ref<string | null>(null);
+const activeTab = ref('note-pages');
+const activeNotePage = ref<string | null>(null);
 
 // 模拟笔记本数据
-const notebooks = ref<Notebook[]>([]);
+const notebooks = ref<NotePage[]>([]);
 
-// 模拟笔记数据
-const notes = ref<Note[]>([]);
-
-// 方法
-const addNotebook = () => {
-  console.log('添加新笔记本');
-};
-
-const addNote = () => {
+const addNote = async () => {
   console.log('添加新笔记');
-  // 这里可以实现新增笔记的逻辑
-  // 例如打开笔记编辑器，创建新笔记等
+  try {
+    const note = await createNote();
+    console.log('添加新笔记成功', note);
+  } catch (error) {
+    console.error('添加新笔记失败', error);
+  }
 };
 
 const toggleDarkMode = () => {
