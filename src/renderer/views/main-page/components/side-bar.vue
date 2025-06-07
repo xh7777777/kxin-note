@@ -31,48 +31,65 @@
     <!-- 功能区域 -->
     <div class="px-3 mb-4 flex-shrink-0">
       <div class="flex items-center gap-2 px-3 py-2 mb-1">
-        <svg
-          class="w-3.5 h-3.5 text-gray-500 stroke-2"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
+        <button
+          @click="toggleFeaturesExpanded"
+          class="w-3.5 h-3.5 text-gray-500 hover:text-gray-700 transition-all duration-300 ease-in-out transform cursor-pointer bg-transparent border-none p-0 flex items-center justify-center"
+          :class="{ 'rotate-90': featuresExpanded }"
         >
-          <polyline points="9,18 15,12 9,6"></polyline>
-        </svg>
+          <svg
+            class="w-3.5 h-3.5 stroke-2"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <polyline points="9,18 15,12 9,6"></polyline>
+          </svg>
+        </button>
         <span
-          class="text-xs font-semibold text-gray-500 uppercase tracking-wider flex-1"
+          class="text-xs font-semibold text-gray-500 uppercase tracking-wider flex-1 cursor-pointer"
+          @click="toggleFeaturesExpanded"
         >
           Features
         </span>
       </div>
 
-      <div class="space-y-0.5">
-        <!-- Home -->
-        <div
-          class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
-          :class="
-            activeTab === 'home'
-              ? 'bg-indigo-600 text-white'
-              : 'text-gray-700 hover:bg-gray-200'
-          "
-          @click="handleSetActiveTab('home')"
-        >
-          <div class="text-base w-5 text-center">🏠</div>
-          <span class="text-sm flex-1">Home</span>
-        </div>
+      <!-- Features 内容区域 -->
+      <div
+        class="overflow-hidden transition-all duration-300 ease-in-out"
+        :style="{
+          maxHeight: featuresExpanded ? featuresContentHeight + 'px' : '0px',
+          opacity: featuresExpanded ? 1 : 0,
+        }"
+        ref="featuresContent"
+      >
+        <div class="space-y-0.5">
+          <!-- Home -->
+          <div
+            class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
+            :class="
+              activeTab === 'home'
+                ? 'bg-indigo-600 text-white'
+                : 'text-gray-700 hover:bg-gray-200'
+            "
+            @click="handleSetActiveTab('home')"
+          >
+            <div class="text-base w-5 text-center">🏠</div>
+            <span class="text-sm flex-1">Home</span>
+          </div>
 
-        <!-- Bookshelf -->
-        <div
-          class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
-          :class="
-            activeTab === 'bookshelf'
-              ? 'bg-indigo-600 text-white'
-              : 'text-gray-700 hover:bg-gray-200'
-          "
-          @click="handleSetActiveTab('notebooks')"
-        >
-          <div class="text-base w-5 text-center">📚</div>
-          <span class="text-sm flex-1">My Bookshelf</span>
+          <!-- Bookshelf -->
+          <div
+            class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
+            :class="
+              activeTab === 'bookshelf'
+                ? 'bg-indigo-600 text-white'
+                : 'text-gray-700 hover:bg-gray-200'
+            "
+            @click="handleSetActiveTab('notebooks')"
+          >
+            <div class="text-base w-5 text-center">📚</div>
+            <span class="text-sm flex-1">My Bookshelf</span>
+          </div>
         </div>
       </div>
     </div>
@@ -80,16 +97,23 @@
     <!-- 笔记本区域 -->
     <div class="px-3 mb-4 flex-shrink-0">
       <div class="flex items-center gap-2 px-3 py-2 mb-1">
-        <svg
-          class="w-3.5 h-3.5 text-gray-500 stroke-2"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
+        <button
+          @click="toggleNotebooksExpanded"
+          class="w-3.5 h-3.5 text-gray-500 hover:text-gray-700 transition-all duration-300 ease-in-out transform cursor-pointer bg-transparent border-none p-0 flex items-center justify-center"
+          :class="{ 'rotate-90': notebooksExpanded }"
         >
-          <polyline points="9,18 15,12 9,6"></polyline>
-        </svg>
+          <svg
+            class="w-3.5 h-3.5 stroke-2"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <polyline points="9,18 15,12 9,6"></polyline>
+          </svg>
+        </button>
         <span
-          class="text-xs font-semibold text-gray-500 uppercase tracking-wider flex-1"
+          class="text-xs font-semibold text-gray-500 uppercase tracking-wider flex-1 cursor-pointer"
+          @click="toggleNotebooksExpanded"
         >
           Notebooks
         </span>
@@ -109,41 +133,54 @@
         </button>
       </div>
 
-      <div class="space-y-0.5">
-        <div
-          v-for="notebook in notebooks"
-          :key="notebook.id"
-          class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
-          :class="
-            activeNotebook === notebook.id
-              ? 'bg-indigo-600 text-white'
-              : 'text-gray-700 hover:bg-gray-200'
-          "
-          @click="handleSelectNotebook(notebook.id)"
-        >
+      <!-- Notebooks 内容区域 -->
+      <div
+        class="overflow-hidden transition-all duration-300 ease-in-out"
+        :style="{
+          maxHeight: notebooksExpanded ? notebooksContentHeight + 'px' : '0px',
+          opacity: notebooksExpanded ? 1 : 0,
+        }"
+        ref="notebooksContent"
+      >
+        <div class="space-y-0.5">
           <div
-            class="w-5 h-5 rounded flex items-center justify-center text-xs"
-            :style="{ backgroundColor: notebook.color }"
-          >
-            {{ notebook.emoji }}
-          </div>
-          <span class="text-sm flex-1">{{ notebook.name }}</span>
-          <span
-            class="text-xs px-1.5 py-0.5 rounded-xl font-medium min-w-[20px] text-center"
+            v-for="notebook in notebooks"
+            :key="notebook.id"
+            class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
             :class="
               activeNotebook === notebook.id
-                ? 'bg-white bg-opacity-20 text-white'
-                : 'bg-gray-100 text-gray-500'
+                ? 'bg-indigo-600 text-white'
+                : 'text-gray-700 hover:bg-gray-200'
             "
+            @click="handleSelectNotebook(notebook.id)"
           >
-            {{ notebook.noteCount }}
-          </span>
+            <div
+              class="w-5 h-5 rounded flex items-center justify-center text-xs"
+              :style="{ backgroundColor: notebook.color }"
+            >
+              {{ notebook.emoji }}
+            </div>
+            <span class="text-sm flex-1">{{ notebook.name }}</span>
+            <span
+              class="text-xs px-1.5 py-0.5 rounded-xl font-medium min-w-[20px] text-center"
+              :class="
+                activeNotebook === notebook.id
+                  ? 'bg-white bg-opacity-20 text-white'
+                  : 'bg-gray-100 text-gray-500'
+              "
+            >
+              {{ notebook.noteCount }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 笔记列表区域 -->
-    <div v-if="activeNotebook" class="flex-1 min-h-0 flex flex-col">
+    <div
+      v-if="activeNotebook && notebooksExpanded"
+      class="flex-1 min-h-0 flex flex-col"
+    >
       <div
         class="flex-1 overflow-y-auto px-3 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
       >
@@ -183,7 +220,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, nextTick, onMounted, watch } from 'vue';
 
 export interface Note {
   id: string;
@@ -220,6 +257,84 @@ const emit = defineEmits<{
   'update:activeNoteId': [value: string | null];
   'add-notebook': [];
 }>();
+
+// 展开收缩状态
+const featuresExpanded = ref(true);
+const notebooksExpanded = ref(true);
+
+// 内容区域引用和高度
+const featuresContent = ref<HTMLElement>();
+const notebooksContent = ref<HTMLElement>();
+const featuresContentHeight = ref(0);
+const notebooksContentHeight = ref(0);
+
+// 计算内容高度
+const calculateContentHeight = async () => {
+  await nextTick();
+
+  if (featuresContent.value) {
+    // 临时展开以获取真实高度
+    const originalDisplay = featuresContent.value.style.maxHeight;
+    featuresContent.value.style.maxHeight = 'none';
+    featuresContentHeight.value = featuresContent.value.scrollHeight;
+    featuresContent.value.style.maxHeight = originalDisplay;
+  }
+
+  if (notebooksContent.value) {
+    // 临时展开以获取真实高度
+    const originalDisplay = notebooksContent.value.style.maxHeight;
+    notebooksContent.value.style.maxHeight = 'none';
+    notebooksContentHeight.value = notebooksContent.value.scrollHeight;
+    notebooksContent.value.style.maxHeight = originalDisplay;
+  }
+};
+
+// 切换功能区域展开状态
+const toggleFeaturesExpanded = () => {
+  featuresExpanded.value = !featuresExpanded.value;
+
+  // 保存状态到本地存储
+  localStorage.setItem(
+    'sidebar-features-expanded',
+    String(featuresExpanded.value)
+  );
+};
+
+// 切换笔记本区域展开状态
+const toggleNotebooksExpanded = () => {
+  notebooksExpanded.value = !notebooksExpanded.value;
+
+  // 保存状态到本地存储
+  localStorage.setItem(
+    'sidebar-notebooks-expanded',
+    String(notebooksExpanded.value)
+  );
+};
+
+// 从本地存储恢复展开状态
+const restoreExpandedState = () => {
+  const savedFeaturesState = localStorage.getItem('sidebar-features-expanded');
+  const savedNotebooksState = localStorage.getItem(
+    'sidebar-notebooks-expanded'
+  );
+
+  if (savedFeaturesState !== null) {
+    featuresExpanded.value = savedFeaturesState === 'true';
+  }
+
+  if (savedNotebooksState !== null) {
+    notebooksExpanded.value = savedNotebooksState === 'true';
+  }
+};
+
+// 监听笔记本数据变化，重新计算高度
+watch(
+  () => props.notebooks,
+  () => {
+    calculateContentHeight();
+  },
+  { deep: true }
+);
 
 // 计算属性：过滤后的笔记
 const filteredNotes = computed(() => {
@@ -260,6 +375,12 @@ const handleSelectNotebook = (notebookId: string) => {
   emit('update:activeNotebook', notebookId);
   emit('update:activeTab', 'notebooks');
   emit('update:activeNoteId', null);
+
+  // 如果笔记本区域是收缩状态，自动展开
+  if (!notebooksExpanded.value) {
+    notebooksExpanded.value = true;
+    localStorage.setItem('sidebar-notebooks-expanded', 'true');
+  }
 };
 
 const handleSelectNote = (noteId: string) => {
@@ -268,6 +389,12 @@ const handleSelectNote = (noteId: string) => {
 
 const handleAddNotebook = () => {
   emit('add-notebook');
+
+  // 如果笔记本区域是收缩状态，自动展开
+  if (!notebooksExpanded.value) {
+    notebooksExpanded.value = true;
+    localStorage.setItem('sidebar-notebooks-expanded', 'true');
+  }
 };
 
 const formatDate = (date: Date) => {
@@ -284,6 +411,12 @@ const formatDate = (date: Date) => {
     day: 'numeric',
   });
 };
+
+// 生命周期
+onMounted(() => {
+  restoreExpandedState();
+  calculateContentHeight();
+});
 </script>
 
 <style scoped>
@@ -309,10 +442,34 @@ const formatDate = (date: Date) => {
   border-radius: 2px;
 }
 
+/* 箭头旋转动画 */
+.transform {
+  transition: transform 0.3s ease-in-out;
+}
+
+.rotate-90 {
+  transform: rotate(90deg);
+}
+
+/* 优化展开收缩动画 */
+.transition-all {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .w-\[280px\] {
     width: 260px;
   }
+}
+
+/* 确保按钮不会因为聚焦而产生额外的样式 */
+button:focus {
+  outline: none;
+}
+
+button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
 }
 </style>
