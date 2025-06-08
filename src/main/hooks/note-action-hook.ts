@@ -200,24 +200,14 @@ const rebuildNotesIndex = async (): Promise<void> => {
 const createDefaultNoteContent = (): NoteContent => {
   return {
     time: Date.now(),
-    version: '2.29.0',
-    blocks: [
-      {
-        id: generateUniqueId(),
-        type: BlockType.PARAGRAPH,
-        data: {
-          text: '开始写笔记...',
-        },
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      },
-    ],
+    version: '2.30.8',
+    blocks: [],
     stats: {
-      characters: 8,
-      words: 1,
-      paragraphs: 1,
-      readingTime: 1,
-      blockCount: 1,
+      characters: 0,
+      words: 0,
+      paragraphs: 0,
+      readingTime: 0,
+      blockCount: 0,
       imageCount: 0,
     },
   };
