@@ -10,11 +10,13 @@
       @toggle-dark-mode="toggleDarkMode"
       @open-settings="openSettings"
       @open-trash="openTrash"
+      @toggle-collapse="handleSidebarCollapse"
     />
 
     <!-- 右侧内容区域 -->
     <div
-      class="flex-1 flex items-center justify-center bg-white min-h-screen overflow-auto ml-[280px]"
+      class="flex-1 flex items-center justify-center bg-white min-h-screen overflow-auto transition-all duration-300"
+      :class="sidebarCollapsed ? 'ml-[60px]' : 'ml-[280px]'"
     >
       <!-- 没有选中笔记时显示 -->
       <div class="text-center max-w-xs" v-if="activeNoteId === null">
@@ -43,6 +45,9 @@
       </div>
       <NoteView :note-id="activeNoteId" ref="noteViewRef" v-else />
     </div>
+
+    <!-- 全局消息组件 -->
+    <PopMessage />
   </div>
 </template>
 
@@ -50,13 +55,18 @@
 import { ref, onMounted } from 'vue';
 import SideBar from './components/SideBar.vue';
 import NoteView from './components/NoteView.vue';
+import PopMessage from './components/PopMessage.vue';
 import { useNotes } from './hooks/useNotes';
+import { useMessage } from './hooks/useMessage';
 
 const { notePages, activeNoteId, createNote, getAllNotes, selectNote } =
   useNotes();
 
+const { success, error, warning, info } = useMessage();
+
 // 响应式数据
 const searchQuery = ref('');
+const sidebarCollapsed = ref(false);
 
 // 笔记视图组件引用
 const noteViewRef = ref<InstanceType<typeof NoteView> | null>(null);
@@ -72,6 +82,7 @@ const addNote = async () => {
     console.log('添加新笔记成功', note);
   } catch (error) {
     console.error('添加新笔记失败', error);
+    error('创建失败', '无法创建新笔记，请重试');
   }
 };
 
@@ -82,19 +93,26 @@ const handleSelectNote = async (noteId: string) => {
   }
 };
 
+const handleSidebarCollapse = (collapsed: boolean) => {
+  sidebarCollapsed.value = collapsed;
+};
+
 const toggleDarkMode = () => {
   console.log('切换黑暗模式');
+  info('功能开发中', '黑暗模式功能正在开发中');
   // 这里可以实现全局的黑暗模式切换逻辑
   // 例如切换 CSS 类，更新 Pinia store 等
 };
 
 const openSettings = () => {
   console.log('打开设置');
+  warning('功能开发中', '设置功能正在开发中');
   // 这里可以打开设置模态框或跳转到设置页面
 };
 
 const openTrash = () => {
   console.log('打开垃圾桶');
+  info('垃圾桶功能', '垃圾桶功能正在开发中');
   // 这里可以显示已删除的笔记列表
 };
 </script>
@@ -104,6 +122,10 @@ const openTrash = () => {
 @media (max-width: 768px) {
   .ml-\[280px\] {
     margin-left: 260px;
+  }
+
+  .ml-\[60px\] {
+    margin-left: 50px;
   }
 }
 </style>
