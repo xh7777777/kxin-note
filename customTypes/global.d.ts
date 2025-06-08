@@ -113,6 +113,12 @@ interface NoteAPI {
 }
 
 declare global {
+  /**
+   * Vite build-time constants
+   */
+  const __ISWEB__: number;
+  const __CONFIG__: any;
+
   interface Window {
     performance: {
       memory: memoryInfo;

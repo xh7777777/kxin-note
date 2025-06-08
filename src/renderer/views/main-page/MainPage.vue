@@ -8,6 +8,7 @@
       :active-note-id="activeNoteId"
       :note-pages="notePages"
       @add-note="addNote"
+      @select-note="selectNote"
       @toggle-dark-mode="toggleDarkMode"
       @open-settings="openSettings"
       @open-trash="openTrash"
@@ -49,12 +50,16 @@
 import { ref, onMounted } from 'vue';
 import SideBar from './components/side-bar.vue';
 import { useNotes } from './hooks/useNotes';
-import type {
-  NotePage,
-  NoteIndexItem,
-} from '../../../common/models/note.types';
+import type { NotePage, NoteIndexItem } from '@common/models/note.types';
 
-const { notePages, activeNote, createNote, getAllNotes } = useNotes();
+const {
+  notePages,
+  activeNote,
+  createNote,
+  getAllNotes,
+  getNoteById,
+  selectNote,
+} = useNotes();
 
 // 响应式数据
 const searchQuery = ref('');

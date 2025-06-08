@@ -104,18 +104,18 @@
                 <span class="text-sm flex-1">Home</span>
               </div>
 
-              <!-- Bookshelf -->
+              <!-- Pageshelf -->
               <div
                 class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
                 :class="
-                  activeTab === 'bookshelf'
+                  activeTab === 'Pageshelf'
                     ? 'bg-indigo-600 text-white'
                     : 'text-gray-700 hover:bg-gray-200'
                 "
                 @click="handleSetActiveTab('notePages')"
               >
                 <div class="text-base w-5 text-center">📚</div>
-                <span class="text-sm flex-1">My Bookshelf</span>
+                <span class="text-sm flex-1">My Pageshelf</span>
               </div>
             </div>
           </div>
@@ -126,9 +126,9 @@
       <div class="px-3 mb-4 flex-shrink-0">
         <div class="flex items-center gap-2 px-3 py-2 mb-1">
           <button
-            @click="toggleNotebooksExpanded"
+            @click="toggleNotePagesExpanded"
             class="w-3.5 h-3.5 text-gray-500 hover:text-gray-700 transition-all duration-300 ease-in-out transform cursor-pointer bg-transparent border-none p-0 flex items-center justify-center"
-            :class="{ 'rotate-90': notebooksExpanded }"
+            :class="{ 'rotate-90': notePagesExpanded }"
           >
             <svg
               class="w-3.5 h-3.5 stroke-2"
@@ -141,14 +141,14 @@
           </button>
           <span
             class="text-xs font-semibold text-gray-500 uppercase tracking-wider flex-1 cursor-pointer"
-            @click="toggleNotebooksExpanded"
+            @click="toggleNotePagesExpanded"
           >
-            Notebooks
+            NotePages
           </span>
           <button
             class="flex items-center justify-center w-6 h-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
             @click="handleAddNote"
-            title="Add New Notebook"
+            title="Add New NotePage"
           >
             <svg
               class="w-3 h-3 stroke-2"
@@ -162,39 +162,39 @@
           </button>
         </div>
 
-        <!-- Notebooks 内容区域 -->
+        <!-- NotePages 内容区域 -->
         <div
           class="overflow-hidden transition-all duration-300 ease-in-out"
           :style="{
-            maxHeight: notebooksExpanded
-              ? Math.min(notebooksContentHeight, 250) + 'px'
+            maxHeight: notePagesExpanded
+              ? Math.min(notePagesContentHeight, 250) + 'px'
               : '0px',
-            opacity: notebooksExpanded ? 1 : 0,
+            opacity: notePagesExpanded ? 1 : 0,
           }"
         >
           <div
             class="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
             :style="{ maxHeight: '250px' }"
-            ref="notebooksContent"
+            ref="notePagesContent"
           >
             <div class="space-y-0.5">
               <div
-                v-for="notebook in notePages"
-                :key="notebook.id"
+                v-for="notePage in notePages"
+                :key="notePage.id"
                 class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
                 :class="
-                  activeNotePage === notebook.id
+                  activeNotePage === notePage.id
                     ? 'bg-indigo-600 text-white'
                     : 'text-gray-700 hover:bg-gray-200'
                 "
-                @click="handleSelectNotebook(notebook.id)"
+                @click="handleSelectNotePage(notePage.id)"
               >
                 <div
                   class="w-5 h-5 rounded flex items-center justify-center text-xs"
                 >
-                  {{ notebook.icon }}
+                  {{ notePage.icon }}
                 </div>
-                <span class="text-sm flex-1">{{ notebook.title }}</span>
+                <span class="text-sm flex-1">{{ notePage.title }}</span>
               </div>
             </div>
           </div>
@@ -289,7 +289,7 @@ import {
   NotePage,
   NoteContent,
   NoteIndexItem,
-} from '../../../../common/models/note.types';
+} from '@common/models/note.types';
 
 // Props
 const props = defineProps<{
@@ -303,27 +303,25 @@ const props = defineProps<{
 // Emits
 const emit = defineEmits<{
   'update:searchQuery': [value: string];
-  'update:activeTab': [value: string];
-  'update:activeNotePage': [value: string | null];
-  'update:activeNoteId': [value: string | null];
   'add-note': [];
   'toggle-dark-mode': [];
   'open-settings': [];
   'open-trash': [];
+  'select-note': [value: string];
 }>();
 
 // 展开收缩状态
 const featuresExpanded = ref(true);
-const notebooksExpanded = ref(true);
+const notePagesExpanded = ref(true);
 
 // 黑暗模式状态
 const isDarkMode = ref(false);
 
 // 内容区域引用和高度
 const featuresContent = ref<HTMLElement>();
-const notebooksContent = ref<HTMLElement>();
+const notePagesContent = ref<HTMLElement>();
 const featuresContentHeight = ref(0);
-const notebooksContentHeight = ref(0);
+const notePagesContentHeight = ref(0);
 
 // 计算内容高度
 const calculateContentHeight = async () => {
@@ -337,12 +335,12 @@ const calculateContentHeight = async () => {
     featuresContent.value.style.maxHeight = originalDisplay;
   }
 
-  if (notebooksContent.value) {
+  if (notePagesContent.value) {
     // 临时展开以获取真实高度
-    const originalDisplay = notebooksContent.value.style.maxHeight;
-    notebooksContent.value.style.maxHeight = 'none';
-    notebooksContentHeight.value = notebooksContent.value.scrollHeight;
-    notebooksContent.value.style.maxHeight = originalDisplay;
+    const originalDisplay = notePagesContent.value.style.maxHeight;
+    notePagesContent.value.style.maxHeight = 'none';
+    notePagesContentHeight.value = notePagesContent.value.scrollHeight;
+    notePagesContent.value.style.maxHeight = originalDisplay;
   }
 };
 
@@ -358,20 +356,20 @@ const toggleFeaturesExpanded = () => {
 };
 
 // 切换笔记本区域展开状态
-const toggleNotebooksExpanded = () => {
-  notebooksExpanded.value = !notebooksExpanded.value;
+const toggleNotePagesExpanded = () => {
+  notePagesExpanded.value = !notePagesExpanded.value;
 
   // 保存状态到本地存储
   localStorage.setItem(
     'sidebar-note-pages-expanded',
-    String(notebooksExpanded.value)
+    String(notePagesExpanded.value)
   );
 };
 
 // 从本地存储恢复展开状态
 const restoreExpandedState = () => {
   const savedFeaturesState = localStorage.getItem('sidebar-features-expanded');
-  const savedNotebooksState = localStorage.getItem(
+  const savedNotePagesState = localStorage.getItem(
     'sidebar-note-pages-expanded'
   );
   const savedDarkMode = localStorage.getItem('dark-mode');
@@ -380,8 +378,8 @@ const restoreExpandedState = () => {
     featuresExpanded.value = savedFeaturesState === 'true';
   }
 
-  if (savedNotebooksState !== null) {
-    notebooksExpanded.value = savedNotebooksState === 'true';
+  if (savedNotePagesState !== null) {
+    notePagesExpanded.value = savedNotePagesState === 'true';
   }
 
   if (savedDarkMode !== null) {
@@ -405,28 +403,19 @@ const searchQuery = computed({
 });
 
 // 方法
-const handleSetActiveTab = (tab: string) => {
-  emit('update:activeTab', tab);
-  if (tab !== 'notePages') {
-    emit('update:activeNotePage', null);
-  }
-};
+const handleSetActiveTab = (tab: string) => {};
 
-const handleSelectNotebook = (notebookId: string) => {
-  emit('update:activeNotePage', notebookId);
-  emit('update:activeTab', 'notePages');
-  emit('update:activeNoteId', null);
+const handleSelectNotePage = (notePageId: string) => {
+  emit('select-note', notePageId);
 
   // 如果笔记本区域是收缩状态，自动展开
-  if (!notebooksExpanded.value) {
-    notebooksExpanded.value = true;
+  if (!notePagesExpanded.value) {
+    notePagesExpanded.value = true;
     localStorage.setItem('sidebar-notePages-expanded', 'true');
   }
 };
 
-const handleSelectNote = (noteId: string) => {
-  emit('update:activeNoteId', noteId);
-};
+const handleSelectNote = (noteId: string) => {};
 
 const handleAddNote = () => {
   emit('add-note');
@@ -434,8 +423,8 @@ const handleAddNote = () => {
   // 如果没有选中笔记本，可以提示用户先选择笔记本
   if (!props.activeNotePage) {
     // 可以显示提示或自动展开笔记本区域
-    if (!notebooksExpanded.value) {
-      notebooksExpanded.value = true;
+    if (!notePagesExpanded.value) {
+      notePagesExpanded.value = true;
       localStorage.setItem('sidebar-notePages-expanded', 'true');
     }
   }
