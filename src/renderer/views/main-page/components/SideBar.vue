@@ -240,7 +240,9 @@
                 >
                   {{ notePage.icon }}
                 </div>
-                <span class="text-sm flex-1">{{ notePage.title }}</span>
+                <span class="text-sm flex-1">
+                  {{ notePage.title || '未命名笔记' }}
+                </span>
               </div>
             </div>
           </div>
