@@ -3,10 +3,8 @@
     <!-- 左侧边栏组件 -->
     <SideBar
       :search-query="searchQuery"
-      :active-tab="activeTab"
-      :active-note-page="activeNotePage"
-      :active-note-id="activeNoteId"
       :note-pages="notePages"
+      :active-note-id="activeNoteId"
       @add-note="addNote"
       @select-note="selectNote"
       @toggle-dark-mode="toggleDarkMode"
@@ -18,7 +16,8 @@
     <div
       class="flex-1 flex items-center justify-center bg-white min-h-screen overflow-auto ml-[280px]"
     >
-      <div class="text-center max-w-xs">
+      <!-- 没有选中笔记时显示 -->
+      <div class="text-center max-w-xs" v-if="activeNoteId === null">
         <div class="text-center">
           <svg
             class="w-16 h-16 text-gray-200 mb-4 mx-auto stroke-1"
@@ -42,30 +41,23 @@
           </p>
         </div>
       </div>
+      <NoteView :note-id="activeNoteId" v-else />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import SideBar from './components/side-bar.vue';
+import SideBar from './components/SideBar.vue';
+import NoteView from './components/NoteView.vue';
 import { useNotes } from './hooks/useNotes';
-import type { NotePage, NoteIndexItem } from '@common/models/note.types';
+import type { NoteIndexItem } from '@common/models/note.types';
 
-const {
-  notePages,
-  activeNote,
-  createNote,
-  getAllNotes,
-  getNoteById,
-  selectNote,
-} = useNotes();
+const { notePages, activeNoteId, createNote, getAllNotes, selectNote } =
+  useNotes();
 
 // 响应式数据
 const searchQuery = ref('');
-const activeNoteId = ref<string | null>(null);
-const activeTab = ref('note-pages');
-const activeNotePage = ref<string | null>(null);
 
 // 模拟笔记本数据
 const notebooks = ref<NoteIndexItem[]>([]);

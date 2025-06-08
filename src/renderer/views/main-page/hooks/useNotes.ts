@@ -2,7 +2,7 @@ import { ref } from 'vue';
 import type { NoteIndexItem, NoteContent } from '@common/models/note.types';
 
 function useNotes() {
-  const activeNote = ref<string | null>(null);
+  const activeNoteId = ref<string | null>(null);
   const notePages = ref<NoteIndexItem[]>([]);
   const noteLoading = ref(false);
   const noteError = ref<string | null>(null);
@@ -36,7 +36,7 @@ function useNotes() {
   };
 
   const selectNote = async (id: string) => {
-    activeNote.value = id;
+    activeNoteId.value = id;
     const note = await getNoteById(id);
     console.log('selectNote', note);
     if (note) {
@@ -46,7 +46,7 @@ function useNotes() {
 
   return {
     notePages,
-    activeNote,
+    activeNoteId,
     createNote,
     getAllNotes,
     getNoteById,

@@ -93,11 +93,6 @@
               <!-- Home -->
               <div
                 class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
-                :class="
-                  activeTab === 'home'
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-gray-700 hover:bg-gray-200'
-                "
                 @click="handleSetActiveTab('home')"
               >
                 <div class="text-base w-5 text-center">🏠</div>
@@ -107,11 +102,6 @@
               <!-- Pageshelf -->
               <div
                 class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
-                :class="
-                  activeTab === 'Pageshelf'
-                    ? 'bg-indigo-600 text-white'
-                    : 'text-gray-700 hover:bg-gray-200'
-                "
                 @click="handleSetActiveTab('notePages')"
               >
                 <div class="text-base w-5 text-center">📚</div>
@@ -183,7 +173,7 @@
                 :key="notePage.id"
                 class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
                 :class="
-                  activeNotePage === notePage.id
+                  activeNoteId === notePage.id
                     ? 'bg-indigo-600 text-white'
                     : 'text-gray-700 hover:bg-gray-200'
                 "
@@ -285,19 +275,13 @@
 
 <script setup lang="ts">
 import { computed, ref, nextTick, onMounted, watch } from 'vue';
-import {
-  NotePage,
-  NoteContent,
-  NoteIndexItem,
-} from '@common/models/note.types';
+import { NoteIndexItem } from '@common/models/note.types';
 
 // Props
 const props = defineProps<{
   searchQuery: string;
-  activeTab: string;
-  activeNotePage: string | null;
-  activeNoteId: string | null;
   notePages: NoteIndexItem[];
+  activeNoteId: string | null;
 }>();
 
 // Emits
@@ -415,19 +399,8 @@ const handleSelectNotePage = (notePageId: string) => {
   }
 };
 
-const handleSelectNote = (noteId: string) => {};
-
 const handleAddNote = () => {
   emit('add-note');
-
-  // 如果没有选中笔记本，可以提示用户先选择笔记本
-  if (!props.activeNotePage) {
-    // 可以显示提示或自动展开笔记本区域
-    if (!notePagesExpanded.value) {
-      notePagesExpanded.value = true;
-      localStorage.setItem('sidebar-notePages-expanded', 'true');
-    }
-  }
 };
 
 // 工具栏方法
