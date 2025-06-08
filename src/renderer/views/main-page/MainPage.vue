@@ -6,7 +6,7 @@
       :note-pages="notePages"
       :active-note-id="activeNoteId"
       @add-note="addNote"
-      @select-note="selectNote"
+      @select-note="handleSelectNote"
       @toggle-dark-mode="toggleDarkMode"
       @open-settings="openSettings"
       @open-trash="openTrash"
@@ -41,7 +41,7 @@
           </p>
         </div>
       </div>
-      <NoteView :note-id="activeNoteId" v-else />
+      <NoteView :note-id="activeNoteId" ref="noteViewRef" v-else />
     </div>
   </div>
 </template>
@@ -51,7 +51,6 @@ import { ref, onMounted } from 'vue';
 import SideBar from './components/SideBar.vue';
 import NoteView from './components/NoteView.vue';
 import { useNotes } from './hooks/useNotes';
-import type { NoteIndexItem } from '@common/models/note.types';
 
 const { notePages, activeNoteId, createNote, getAllNotes, selectNote } =
   useNotes();
@@ -59,8 +58,8 @@ const { notePages, activeNoteId, createNote, getAllNotes, selectNote } =
 // 响应式数据
 const searchQuery = ref('');
 
-// 模拟笔记本数据
-const notebooks = ref<NoteIndexItem[]>([]);
+// 笔记视图组件引用
+const noteViewRef = ref<InstanceType<typeof NoteView> | null>(null);
 
 onMounted(async () => {
   await getAllNotes();
@@ -73,6 +72,13 @@ const addNote = async () => {
     console.log('添加新笔记成功', note);
   } catch (error) {
     console.error('添加新笔记失败', error);
+  }
+};
+
+const handleSelectNote = async (noteId: string) => {
+  await selectNote(noteId);
+  if (noteViewRef.value) {
+    await noteViewRef.value.changeNotePage(noteId);
   }
 };
 

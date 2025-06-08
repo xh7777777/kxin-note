@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import EditorJS from '@editorjs/editorjs';
 import Header from '@editorjs/header';
-import { NoteContent } from '@common/models/note.types';
+import { NoteContent, NotePage } from '@common/models/note.types';
 
 const editorBaseConfig = {
   tools: {
@@ -9,9 +9,8 @@ const editorBaseConfig = {
   },
 };
 
-const editorJs = new EditorJS(editorBaseConfig);
-
 function useEditorJs() {
+  const noteInfo = ref<NotePage | null>(null);
   const noteContent = ref<NoteContent | null>(null);
   const containerRef = ref<HTMLDivElement | null>(null);
   const readOnly = ref(false);
@@ -69,6 +68,7 @@ function useEditorJs() {
     readOnly,
     noteContent,
     saveLoading,
+    noteInfo,
     initEditor,
     saveEditor,
     renderEditor,
