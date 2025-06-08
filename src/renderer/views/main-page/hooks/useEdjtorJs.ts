@@ -1,8 +1,13 @@
 import { ref } from 'vue';
 import EditorJS from '@editorjs/editorjs';
+import Header from '@editorjs/header';
 import { NoteContent } from '@common/models/note.types';
 
-const editorBaseConfig = {};
+const editorBaseConfig = {
+  tools: {
+    header: Header,
+  },
+};
 
 const editorJs = new EditorJS(editorBaseConfig);
 

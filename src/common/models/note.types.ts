@@ -34,6 +34,8 @@ export interface NotePage {
   isFavorite?: boolean;
   /** 是否为归档页面 */
   isArchived?: boolean;
+  /** 是否在垃圾桶中 */
+  isInTrash?: boolean;
   /** 页面排序权重 */
   order?: number;
 }

@@ -330,6 +330,202 @@ const getAllNotes = async (): Promise<NoteIndexItem[]> => {
 };
 
 /**
+ * 根据字段更新笔记
+ */
+const updateNoteFields = async (
+  noteId: string,
+  updates: Partial<NotePage>
+): Promise<NotePage> => {
+  try {
+    // 加载现有笔记
+    const existingNote = await loadNoteById(noteId);
+
+    // 创建更新后的笔记对象
+    const updatedNote: NotePage = {
+      ...existingNote,
+      ...updates,
+      id: noteId, // 确保ID不会被更改
+      metadata: {
+        ...existingNote.metadata,
+        ...updates.metadata,
+        updatedAt: new Date(), // 总是更新修改时间
+        createdAt: existingNote.metadata.createdAt, // 保持创建时间不变
+      },
+    };
+
+    // 如果更新了父页面ID，重新计算层级
+    if (updates.parentId !== undefined) {
+      if (updates.parentId) {
+        try {
+          const parentNote = await loadNoteById(updates.parentId);
+          updatedNote.level = parentNote.level + 1;
+        } catch (error) {
+          console.warn(
+            'Failed to load parent note for level calculation:',
+            error
+          );
+          updatedNote.level = 0;
+        }
+      } else {
+        updatedNote.level = 0;
+      }
+    }
+
+    // 保存到文件
+    await saveNoteToFile(updatedNote);
+
+    // 更新索引
+    await updateNoteInIndex(updatedNote);
+
+    return updatedNote;
+  } catch (error) {
+    throw new Error(`Failed to update note ${noteId}: ${error.message}`);
+  }
+};
+
+/**
+ * 删除笔记
+ */
+const deleteNote = async (noteId: string): Promise<void> => {
+  try {
+    const notesPath = getNotesDataPath();
+    const filePath = join(notesPath, `${noteId}.json`);
+
+    // 删除文件
+    await fs.unlink(filePath);
+
+    // 从索引中移除
+    await removeNoteFromIndex(noteId);
+
+    console.log(`Note ${noteId} deleted successfully`);
+  } catch (error) {
+    throw new Error(`Failed to delete note ${noteId}: ${error.message}`);
+  }
+};
+
+/**
+ * 移动笔记到垃圾桶
+ */
+const moveNoteToTrash = async (noteId: string): Promise<NotePage> => {
+  try {
+    // 先加载现有笔记以获取完整的metadata
+    const existingNote = await loadNoteById(noteId);
+
+    const updatedNote = await updateNoteFields(noteId, {
+      isInTrash: true,
+      metadata: {
+        ...existingNote.metadata,
+        status: PageStatus.DELETED,
+        updatedAt: new Date(),
+      },
+    });
+
+    console.log(`Note ${noteId} moved to trash`);
+    return updatedNote;
+  } catch (error) {
+    throw new Error(`Failed to move note ${noteId} to trash: ${error.message}`);
+  }
+};
+
+/**
+ * 从垃圾桶恢复笔记
+ */
+const restoreNoteFromTrash = async (noteId: string): Promise<NotePage> => {
+  try {
+    // 先加载现有笔记以获取完整的metadata
+    const existingNote = await loadNoteById(noteId);
+
+    const updatedNote = await updateNoteFields(noteId, {
+      isInTrash: false,
+      metadata: {
+        ...existingNote.metadata,
+        status: PageStatus.NORMAL,
+        updatedAt: new Date(),
+      },
+    });
+
+    console.log(`Note ${noteId} restored from trash`);
+    return updatedNote;
+  } catch (error) {
+    throw new Error(
+      `Failed to restore note ${noteId} from trash: ${error.message}`
+    );
+  }
+};
+
+/**
+ * 归档笔记
+ */
+const archiveNote = async (noteId: string): Promise<NotePage> => {
+  try {
+    // 先加载现有笔记以获取完整的metadata
+    const existingNote = await loadNoteById(noteId);
+
+    const updatedNote = await updateNoteFields(noteId, {
+      isArchived: true,
+      metadata: {
+        ...existingNote.metadata,
+        status: PageStatus.ARCHIVED,
+        updatedAt: new Date(),
+      },
+    });
+
+    console.log(`Note ${noteId} archived`);
+    return updatedNote;
+  } catch (error) {
+    throw new Error(`Failed to archive note ${noteId}: ${error.message}`);
+  }
+};
+
+/**
+ * 取消归档笔记
+ */
+const unarchiveNote = async (noteId: string): Promise<NotePage> => {
+  try {
+    // 先加载现有笔记以获取完整的metadata
+    const existingNote = await loadNoteById(noteId);
+
+    const updatedNote = await updateNoteFields(noteId, {
+      isArchived: false,
+      metadata: {
+        ...existingNote.metadata,
+        status: PageStatus.NORMAL,
+        updatedAt: new Date(),
+      },
+    });
+
+    console.log(`Note ${noteId} unarchived`);
+    return updatedNote;
+  } catch (error) {
+    throw new Error(`Failed to unarchive note ${noteId}: ${error.message}`);
+  }
+};
+
+/**
+ * 切换笔记收藏状态
+ */
+const toggleNoteFavorite = async (noteId: string): Promise<NotePage> => {
+  try {
+    // 先加载当前笔记以获取当前收藏状态
+    const currentNote = await loadNoteById(noteId);
+    const newFavoriteStatus = !currentNote.isFavorite;
+
+    const updatedNote = await updateNoteFields(noteId, {
+      isFavorite: newFavoriteStatus,
+    });
+
+    console.log(
+      `Note ${noteId} favorite status changed to: ${newFavoriteStatus}`
+    );
+    return updatedNote;
+  } catch (error) {
+    throw new Error(
+      `Failed to toggle favorite for note ${noteId}: ${error.message}`
+    );
+  }
+};
+
+/**
  * 初始化存储目录
  */
 const initializeStorageDirectories = async () => {
@@ -388,6 +584,86 @@ export const registerNoteActionHandlers = () => {
     }
   });
 
+  // 更新笔记字段
+  ipcMain.handle(
+    'note:update',
+    async (event, noteId: string, updates: Partial<NotePage>) => {
+      try {
+        const updatedNote = await updateNoteFields(noteId, updates);
+        return { success: true, data: updatedNote };
+      } catch (error) {
+        console.error('Failed to update note:', error);
+        return { success: false, error: error.message };
+      }
+    }
+  );
+
+  // 删除笔记
+  ipcMain.handle('note:delete', async (event, noteId: string) => {
+    try {
+      await deleteNote(noteId);
+      return { success: true, message: 'Note deleted successfully' };
+    } catch (error) {
+      console.error('Failed to delete note:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // 移动笔记到垃圾桶
+  ipcMain.handle('note:moveToTrash', async (event, noteId: string) => {
+    try {
+      const note = await moveNoteToTrash(noteId);
+      return { success: true, data: note };
+    } catch (error) {
+      console.error('Failed to move note to trash:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // 从垃圾桶恢复笔记
+  ipcMain.handle('note:restoreFromTrash', async (event, noteId: string) => {
+    try {
+      const note = await restoreNoteFromTrash(noteId);
+      return { success: true, data: note };
+    } catch (error) {
+      console.error('Failed to restore note from trash:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // 归档笔记
+  ipcMain.handle('note:archive', async (event, noteId: string) => {
+    try {
+      const note = await archiveNote(noteId);
+      return { success: true, data: note };
+    } catch (error) {
+      console.error('Failed to archive note:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // 取消归档笔记
+  ipcMain.handle('note:unarchive', async (event, noteId: string) => {
+    try {
+      const note = await unarchiveNote(noteId);
+      return { success: true, data: note };
+    } catch (error) {
+      console.error('Failed to unarchive note:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // 切换笔记收藏状态
+  ipcMain.handle('note:toggleFavorite', async (event, noteId: string) => {
+    try {
+      const note = await toggleNoteFavorite(noteId);
+      return { success: true, data: note };
+    } catch (error) {
+      console.error('Failed to toggle note favorite:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
   // 获取所有笔记（从索引）
   ipcMain.handle('notes:getAll', async () => {
     try {
@@ -417,6 +693,13 @@ export {
   saveNoteToFile,
   loadNoteById,
   getAllNotes,
+  updateNoteFields,
+  deleteNote,
+  moveNoteToTrash,
+  restoreNoteFromTrash,
+  archiveNote,
+  unarchiveNote,
+  toggleNoteFavorite,
   rebuildNotesIndex,
   updateNoteInIndex,
   removeNoteFromIndex,

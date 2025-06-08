@@ -41,6 +41,32 @@ contextBridge.exposeInMainWorld('noteAPI', {
   // 获取笔记
   getNote: (noteId: string) => ipcRenderer.invoke('note:get', noteId),
 
+  // 更新笔记
+  updateNote: (noteId: string, updates: any) =>
+    ipcRenderer.invoke('note:update', noteId, updates),
+
+  // 删除笔记
+  deleteNote: (noteId: string) => ipcRenderer.invoke('note:delete', noteId),
+
+  // 移动笔记到垃圾桶
+  moveToTrash: (noteId: string) =>
+    ipcRenderer.invoke('note:moveToTrash', noteId),
+
+  // 从垃圾桶恢复笔记
+  restoreFromTrash: (noteId: string) =>
+    ipcRenderer.invoke('note:restoreFromTrash', noteId),
+
+  // 归档笔记
+  archiveNote: (noteId: string) => ipcRenderer.invoke('note:archive', noteId),
+
+  // 取消归档笔记
+  unarchiveNote: (noteId: string) =>
+    ipcRenderer.invoke('note:unarchive', noteId),
+
+  // 切换笔记收藏状态
+  toggleFavorite: (noteId: string) =>
+    ipcRenderer.invoke('note:toggleFavorite', noteId),
+
   // 获取所有笔记
   getAllNotes: () => ipcRenderer.invoke('notes:getAll'),
 
