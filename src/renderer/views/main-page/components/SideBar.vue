@@ -1,9 +1,10 @@
 <template>
   <div
-    class="fixed top-0 left-0 w-[280px] pt-10 bg-gray-50 border-r border-gray-200 flex flex-col h-screen overflow-hidden"
+    class="fixed top-0 left-0 pt-10 bg-gray-50 border-r border-gray-200 flex flex-col h-screen overflow-hidden transition-all duration-300"
+    :class="isCollapsed ? 'w-[60px]' : 'w-[280px]'"
   >
     <!-- 搜索框 -->
-    <div class="px-5 py-4 flex-shrink-0">
+    <div class="px-5 py-4 flex-shrink-0" v-if="!isCollapsed">
       <div class="relative flex gap-2">
         <div class="flex-1 relative">
           <input
@@ -28,10 +29,49 @@
           </span>
         </div>
 
+        <!-- 收缩按钮 -->
+        <button
+          @click="handleToggleCollapse"
+          class="flex items-center justify-center w-8 h-8 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-md transition-all duration-200 shadow-sm hover:shadow-md"
+          title="Collapse Sidebar"
+        >
+          <svg
+            class="w-4 h-4 stroke-2"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <polyline points="11,17 6,12 11,7"></polyline>
+            <polyline points="18,17 13,12 18,7"></polyline>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 收缩状态的顶部按钮 -->
+    <div class="px-3 py-4 flex-shrink-0" v-if="isCollapsed">
+      <div class="flex flex-col gap-2">
+        <!-- 展开按钮 -->
+        <button
+          @click="handleToggleCollapse"
+          class="flex items-center justify-center w-8 h-8 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-md transition-all duration-200 shadow-sm hover:shadow-md mx-auto"
+          title="Expand Sidebar"
+        >
+          <svg
+            class="w-4 h-4 stroke-2"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+          >
+            <polyline points="13,17 18,12 13,7"></polyline>
+            <polyline points="6,17 11,12 6,7"></polyline>
+          </svg>
+        </button>
+
         <!-- 新增笔记按钮 -->
         <button
           @click="handleAddNote"
-          class="flex items-center justify-center w-8 h-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-all duration-200 shadow-sm hover:shadow-md"
+          class="flex items-center justify-center w-8 h-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-all duration-200 shadow-sm hover:shadow-md mx-auto"
           title="Add New Note"
         >
           <svg
@@ -47,8 +87,8 @@
       </div>
     </div>
 
-    <!-- 主要内容区域 -->
-    <div class="flex-1 min-h-0 flex flex-col">
+    <!-- 展开状态的主要内容区域 -->
+    <div class="flex-1 min-h-0 flex flex-col" v-if="!isCollapsed">
       <!-- 功能区域 -->
       <div class="px-3 mb-4 flex-shrink-0">
         <div class="flex items-center gap-2 px-3 py-2 mb-1">
@@ -72,6 +112,22 @@
           >
             Features
           </span>
+          <!-- 新增笔记按钮 -->
+          <button
+            @click="handleAddNote"
+            class="flex items-center justify-center w-6 h-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
+            title="Add New Note"
+          >
+            <svg
+              class="w-3 h-3 stroke-2"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
         </div>
 
         <!-- Features 内容区域 -->
@@ -192,9 +248,56 @@
       </div>
     </div>
 
+    <!-- 收缩状态的主要内容区域 -->
+    <div class="flex-1 min-h-0 flex flex-col px-3" v-if="isCollapsed">
+      <!-- 功能区域图标 -->
+      <div class="mb-4 flex-shrink-0">
+        <div class="flex flex-col gap-2">
+          <!-- Home -->
+          <button
+            class="flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-all duration-200 hover:bg-gray-200 text-gray-600"
+            @click="handleSetActiveTab('home')"
+            title="Home"
+          >
+            <div class="text-base">🏠</div>
+          </button>
+
+          <!-- Pageshelf -->
+          <button
+            class="flex items-center justify-center w-8 h-8 rounded-md cursor-pointer transition-all duration-200 hover:bg-gray-200 text-gray-600"
+            @click="handleSetActiveTab('notePages')"
+            title="My Pageshelf"
+          >
+            <div class="text-base">📚</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 笔记列表指示器 -->
+      <div
+        class="flex-1 min-h-0 flex flex-col gap-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+      >
+        <div
+          v-for="notePage in notePages"
+          :key="notePage.id"
+          class="w-8 h-2 rounded-full cursor-pointer transition-all duration-200"
+          :class="
+            activeNoteId === notePage.id
+              ? 'bg-indigo-600'
+              : 'bg-gray-300 hover:bg-gray-400'
+          "
+          @click="handleSelectNotePage(notePage.id)"
+          :title="notePage.title"
+        ></div>
+      </div>
+    </div>
+
     <!-- 底部工具栏 -->
     <div class="flex-shrink-0 px-3 py-3 border-t border-gray-200 bg-gray-50">
-      <div class="flex items-center justify-between gap-2">
+      <div
+        class="flex items-center gap-2"
+        :class="isCollapsed ? 'flex-col' : 'justify-between'"
+      >
         <!-- 黑暗模式切换 -->
         <button
           @click="handleToggleDarkMode"
@@ -292,7 +395,11 @@ const emit = defineEmits<{
   'open-settings': [];
   'open-trash': [];
   'select-note': [value: string];
+  'toggle-collapse': [isCollapsed: boolean];
 }>();
+
+// 收缩状态
+const isCollapsed = ref(false);
 
 // 展开收缩状态
 const featuresExpanded = ref(true);
@@ -328,6 +435,17 @@ const calculateContentHeight = async () => {
   }
 };
 
+// 切换收缩状态
+const handleToggleCollapse = () => {
+  isCollapsed.value = !isCollapsed.value;
+
+  // 保存状态到本地存储
+  localStorage.setItem('sidebar-collapsed', String(isCollapsed.value));
+
+  // 通知父组件
+  emit('toggle-collapse', isCollapsed.value);
+};
+
 // 切换功能区域展开状态
 const toggleFeaturesExpanded = () => {
   featuresExpanded.value = !featuresExpanded.value;
@@ -357,6 +475,7 @@ const restoreExpandedState = () => {
     'sidebar-note-pages-expanded'
   );
   const savedDarkMode = localStorage.getItem('dark-mode');
+  const savedCollapsed = localStorage.getItem('sidebar-collapsed');
 
   if (savedFeaturesState !== null) {
     featuresExpanded.value = savedFeaturesState === 'true';
@@ -368,6 +487,12 @@ const restoreExpandedState = () => {
 
   if (savedDarkMode !== null) {
     isDarkMode.value = savedDarkMode === 'true';
+  }
+
+  if (savedCollapsed !== null) {
+    isCollapsed.value = savedCollapsed === 'true';
+    // 通知父组件初始状态
+    emit('toggle-collapse', isCollapsed.value);
   }
 };
 
