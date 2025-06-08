@@ -285,7 +285,11 @@
 
 <script setup lang="ts">
 import { computed, ref, nextTick, onMounted, watch } from 'vue';
-import { NotePage, NoteContent } from '../../../../common/models/note.types';
+import {
+  NotePage,
+  NoteContent,
+  NoteIndexItem,
+} from '../../../../common/models/note.types';
 
 // Props
 const props = defineProps<{
@@ -293,7 +297,7 @@ const props = defineProps<{
   activeTab: string;
   activeNotePage: string | null;
   activeNoteId: string | null;
-  notePages: NotePage[];
+  notePages: NoteIndexItem[];
 }>();
 
 // Emits

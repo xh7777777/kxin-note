@@ -46,12 +46,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import SideBar from './components/side-bar.vue';
 import { useNotes } from './hooks/useNotes';
-import type { NotePage } from '../../../common/models/note.types';
+import type {
+  NotePage,
+  NoteIndexItem,
+} from '../../../common/models/note.types';
 
-const { notePages, activeNote, createNote } = useNotes();
+const { notePages, activeNote, createNote, getAllNotes } = useNotes();
 
 // 响应式数据
 const searchQuery = ref('');
@@ -60,7 +63,11 @@ const activeTab = ref('note-pages');
 const activeNotePage = ref<string | null>(null);
 
 // 模拟笔记本数据
-const notebooks = ref<NotePage[]>([]);
+const notebooks = ref<NoteIndexItem[]>([]);
+
+onMounted(async () => {
+  await getAllNotes();
+});
 
 const addNote = async () => {
   console.log('添加新笔记');
