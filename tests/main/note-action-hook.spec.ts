@@ -89,7 +89,7 @@ describe('Note Action Hook', () => {
       const note = await createNewNote();
 
       expect(note.id).toBe('test-uuid-1234');
-      expect(note.title).toBe('无标题笔记');
+      expect(note.title).toBe('');
       expect(note.icon).toBe('📝');
       expect(note.level).toBe(0);
       expect(note.parentId).toBeUndefined();

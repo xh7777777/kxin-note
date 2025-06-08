@@ -217,7 +217,7 @@ const createDefaultNoteContent = (): NoteContent => {
  * 创建新笔记
  */
 const createNewNote = async (
-  title: string = '无标题笔记',
+  title: string = '',
   parentId?: string
 ): Promise<NotePage> => {
   const noteId = generateUniqueId();

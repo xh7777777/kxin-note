@@ -1,16 +1,28 @@
 <template>
   <!-- <div ref="editorContainer" class="editor-container"></div> -->
   <div class="w-full h-full flex justify-center items-center flex-col relative">
-    <!-- 标题区域 -->
-    <div class="w-full h-10 bg-red-200" v-if="noteInfo">
-      <input type="text" v-model="noteInfo.title" />
+    <!-- 笔记信息区域 -->
+    <!-- 封面图预留区 -->
+    <div class="w-full h-64 bg-blue-500"></div>
+    <div class="max-w-3xl w-3xl h-full flex flex-col">
+      <!-- 标题区域 -->
+      <div class="w-full h-12 bg-red-200" v-if="noteInfo">
+        <input
+          type="text"
+          v-model="noteInfo.title"
+          placeholder="请输入笔记标题"
+          class="w-full h-full bg-transparent outline-none text-2xl font-bold pl-2"
+        />
+      </div>
+      <!-- 编辑器区域 -->
+      <div
+        class="max-w-3xl w-3xl min-h-[100vh] bg-blue-200 flex-1"
+        ref="containerRef"
+        id="editorjs"
+      ></div>
     </div>
-    <!-- 编辑器区域 -->
-    <div
-      class="max-w-3xl w-3xl h-full bg-blue-200"
-      ref="containerRef"
-      id="editorjs"
-    ></div>
+    <!-- 底部预留区 -->
+    <div class="w-full h-[30vh] bg-green-200"></div>
   </div>
 </template>
 <script setup lang="ts">
