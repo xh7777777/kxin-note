@@ -26,6 +26,8 @@ const IsWeb = ref(Boolean(__ISWEB__));
 
 isNotMac.value = systemInfo.platform !== 'darwin';
 
+console.log('__ISWEB__', __ISWEB__, systemInfo.platform);
+
 ipcRendererChannel.IsUseSysTitle.invoke().then(res => {
   IsUseSysTitle.value = res;
 });

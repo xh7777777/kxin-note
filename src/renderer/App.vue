@@ -1,5 +1,5 @@
 <template>
-  <title-bar />
+  <!-- <title-bar /> -->
   <div class="main">
     <router-view v-slot="{ Component }">
       <component :is="Component" />
@@ -13,7 +13,7 @@ import TitleBar from '@renderer/components/titleBar/TitleBar.vue';
 
 <style scoped>
 .main {
-  padding-top: 30px;
+  /* padding-top: 30px; */
   box-sizing: border-box;
 }
 </style>
