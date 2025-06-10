@@ -43,7 +43,12 @@
           </p>
         </div>
       </div>
-      <NoteView :note-id="activeNoteId" ref="noteViewRef" v-else />
+      <NoteView
+        :note-id="activeNoteId"
+        ref="noteViewRef"
+        :key="activeNoteId"
+        v-else
+      />
     </div>
 
     <!-- 全局消息组件 -->
@@ -87,8 +92,8 @@ const addNote = async () => {
 };
 
 const handleSelectNote = async (noteId: string) => {
-  await selectNote(noteId);
-  if (noteViewRef.value) {
+  const res = await selectNote(noteId);
+  if (res && noteViewRef.value) {
     await noteViewRef.value.changeNotePage(noteId);
   }
 };

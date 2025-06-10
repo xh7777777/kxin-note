@@ -1,7 +1,7 @@
 <template>
   <div class="window-title" v-if="!IsUseSysTitle && isNotMac && !IsWeb">
     <!-- 软件logo预留位置 -->
-    <div style="-webkit-app-region: drag" class="logo">
+    <div style="-webkit-app-region: drag" class="logo w-[280px]">
       <img
         src="@renderer/assets/icons/svg/electron-logo.svg"
         class="icon-logo"

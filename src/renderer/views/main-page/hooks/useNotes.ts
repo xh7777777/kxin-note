@@ -36,12 +36,16 @@ function useNotes() {
   };
 
   const selectNote = async (id: string) => {
+    if (activeNoteId.value === id) {
+      return false;
+    }
     activeNoteId.value = id;
     const note = await getNoteById(id);
     console.log('selectNote', note);
     if (note) {
       selectedNoteContent.value = note.content;
     }
+    return true;
   };
 
   return {
