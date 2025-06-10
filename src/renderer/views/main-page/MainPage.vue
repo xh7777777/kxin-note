@@ -123,6 +123,9 @@ const handleUpdateNoteItem = async (
   const res = await updateNote(noteId, { [key]: value });
   if (res) {
     console.log('handleUpdateNoteInfo', noteId, key, value);
+    if (key == 'title' || key == 'icon') {
+      await getAllNotes();
+    }
   } else {
     console.error('handleUpdateNoteInfo11', noteId, key, value);
   }

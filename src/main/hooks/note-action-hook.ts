@@ -30,15 +30,15 @@ const getProjectRoot = () => {
  * 笔记数据存储路径
  */
 const getNotesDataPath = () => {
-  if (app.isPackaged) {
-    // 生产模式：使用用户数据目录
-    const userDataPath = app.getPath('userData');
-    return join(userDataPath, 'notes');
-  } else {
-    // 开发模式：使用项目的assets目录
-    const projectRoot = getProjectRoot();
-    return join(projectRoot, 'assets', 'notes');
-  }
+  // if (app.isPackaged) {
+  // 生产模式：使用用户数据目录
+  const userDataPath = app.getPath('userData');
+  return join(userDataPath, 'notes');
+  // } else {
+  //   // 开发模式：使用项目的assets目录
+  //   const projectRoot = getProjectRoot();
+  //   return join(projectRoot, 'assets', 'notes');
+  // }
 };
 
 /**
@@ -312,7 +312,10 @@ const loadNoteById = async (noteId: string): Promise<NotePage> => {
 const getAllNotes = async (): Promise<NoteIndexItem[]> => {
   try {
     const index = await loadNotesIndex();
-    return index.notes;
+    return index.notes.sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
   } catch (error) {
     console.error('Failed to load notes from index:', error);
     return [];

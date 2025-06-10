@@ -15,6 +15,7 @@ function useNotes() {
   const createNote = async () => {
     const res = await window.noteAPI.createNote();
     if (res.success) {
+      await getAllNotes();
       return res.data;
     }
     return null;
