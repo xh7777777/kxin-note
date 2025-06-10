@@ -67,6 +67,7 @@
     "chalk": "5.4.1",
     "del": "^8.0.0",
     "dotenv": "^16.4.7",
+    "editorjs-undo": "^2.0.28",
     "electron": "^34.1.1",
     "electron-builder": "^25.1.8",
     "electron-devtools-vendor": "^3.0.0",

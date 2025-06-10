@@ -12,6 +12,7 @@
           v-model="noteInfo.title"
           placeholder="请输入笔记标题"
           class="w-full h-full bg-transparent outline-none text-2xl font-bold pl-2"
+          @blur="handleUpdateNoteItem(noteInfo.id, 'title', noteInfo.title)"
         />
       </div>
       <!-- 编辑器区域 -->
@@ -35,6 +36,10 @@ const props = defineProps<{
   noteId: string;
 }>();
 
+const emit = defineEmits<{
+  (e: 'update-note-item', noteId: string, key: string, value: any): void;
+}>();
+
 const { getNoteById } = useNotes();
 
 const { editor, containerRef, initEditor, noteContent, noteInfo } =
@@ -53,6 +58,11 @@ const changeNotePage = async (noteId: string) => {
   } else {
     console.error('笔记不存在');
   }
+};
+
+const handleUpdateNoteItem = (noteId: string, key: string, value: any) => {
+  console.log('handleUpdateNoteItem', noteId, key, value);
+  emit('update-note-item', noteId, key, value);
 };
 
 onMounted(() => {});

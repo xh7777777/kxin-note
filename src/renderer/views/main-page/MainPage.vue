@@ -47,6 +47,7 @@
         :note-id="activeNoteId"
         ref="noteViewRef"
         :key="activeNoteId"
+        @update-note-item="handleUpdateNoteItem"
         v-else
       />
     </div>
@@ -63,9 +64,16 @@ import NoteView from './components/NoteView.vue';
 import PopMessage from './components/PopMessage.vue';
 import { useNotes } from './hooks/useNotes';
 import { useMessage } from './hooks/useMessage';
+import type { NotePage } from '@common/models/note.types';
 
-const { notePages, activeNoteId, createNote, getAllNotes, selectNote } =
-  useNotes();
+const {
+  notePages,
+  activeNoteId,
+  createNote,
+  getAllNotes,
+  selectNote,
+  updateNote,
+} = useNotes();
 
 const { success, error, warning, info } = useMessage();
 
@@ -81,10 +89,14 @@ onMounted(async () => {
 });
 
 const addNote = async () => {
-  console.log('添加新笔记');
   try {
     const note = await createNote();
-    console.log('添加新笔记成功', note);
+    if (note && note.id) {
+      // 笔记创建成功
+      handleSelectNote(note.id);
+    } else {
+      throw new Error('创建失败');
+    }
   } catch (error) {
     console.error('添加新笔记失败', error);
     error('创建失败', '无法创建新笔记，请重试');
@@ -100,6 +112,20 @@ const handleSelectNote = async (noteId: string) => {
 
 const handleSidebarCollapse = (collapsed: boolean) => {
   sidebarCollapsed.value = collapsed;
+};
+
+const handleUpdateNoteItem = async (
+  noteId: string,
+  key: string,
+  value: any
+) => {
+  // console.log('handleUpdateNoteInfo', noteId, updates);
+  const res = await updateNote(noteId, { [key]: value });
+  if (res) {
+    console.log('handleUpdateNoteInfo', noteId, key, value);
+  } else {
+    console.error('handleUpdateNoteInfo11', noteId, key, value);
+  }
 };
 
 const toggleDarkMode = () => {

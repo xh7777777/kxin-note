@@ -1,5 +1,9 @@
 import { ref } from 'vue';
-import type { NoteIndexItem, NoteContent } from '@common/models/note.types';
+import type {
+  NoteIndexItem,
+  NoteContent,
+  NotePage,
+} from '@common/models/note.types';
 
 function useNotes() {
   const activeNoteId = ref<string | null>(null);
@@ -9,9 +13,11 @@ function useNotes() {
   const selectedNoteContent = ref<NoteContent | null>(null);
 
   const createNote = async () => {
-    const note = await window.noteAPI.createNote();
-    console.log('创建笔记成功', note);
-    // notePages.value.push(note.data as NoteIndexItem);
+    const res = await window.noteAPI.createNote();
+    if (res.success) {
+      return res.data;
+    }
+    return null;
   };
 
   const getAllNotes = async () => {
@@ -48,6 +54,38 @@ function useNotes() {
     return true;
   };
 
+  const updateNote = async (id: string, updates: Partial<NotePage>) => {
+    const res = await window.noteAPI.updateNote(id, updates);
+    if (res.success) {
+      return res.data;
+    }
+    return null;
+  };
+
+  const updateTitle = async (id: string, title: string) => {
+    const res = await window.noteAPI.updateNote(id, { title });
+    if (res.success) {
+      return res.data;
+    }
+    return null;
+  };
+
+  const updateIcon = async (id: string, icon: string) => {
+    const res = await window.noteAPI.updateNote(id, { icon });
+    if (res.success) {
+      return res.data;
+    }
+    return null;
+  };
+
+  const updateContent = async (id: string, content: NoteContent) => {
+    const res = await window.noteAPI.updateNote(id, { content });
+    if (res.success) {
+      return res.data;
+    }
+    return null;
+  };
+
   return {
     notePages,
     activeNoteId,
@@ -55,6 +93,10 @@ function useNotes() {
     getAllNotes,
     getNoteById,
     selectNote,
+    updateNote,
+    updateTitle,
+    updateIcon,
+    updateContent,
   };
 }
 

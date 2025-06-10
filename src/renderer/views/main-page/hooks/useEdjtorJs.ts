@@ -5,6 +5,7 @@ import Paragraph from '@editorjs/paragraph';
 import Quote from '@editorjs/quote';
 import Delimiter from '@editorjs/delimiter';
 import EditorjsList from '@editorjs/list';
+import Undo from 'editorjs-undo';
 import { NoteContent, NotePage } from '@common/models/note.types';
 
 const editorBaseConfig = {
@@ -65,6 +66,7 @@ function useEditorJs() {
       onReady: () => {
         console.log('Editor.js is ready to work!');
         renderEditor();
+        new Undo({ editor });
       },
       onChange: () => {
         console.log('Editor.js content changed!');
@@ -80,6 +82,7 @@ function useEditorJs() {
     editor
       .save()
       .then(outputData => {
+        console.log('saveEditor', outputData);
         noteContent.value = outputData;
       })
       .catch(err => {
