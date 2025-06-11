@@ -33,6 +33,9 @@
       ],
       "@common/*": [
         "src/common/*"
+      ],
+      "@customTypes/*": [
+        "customTypes/*"
       ]
     },
     "typeRoots": [
@@ -45,8 +48,8 @@
   },
   "include": [
     "src/**/*",
-    "customTypes/*",
-    "tests/**/*.ts"
+    "customTypes/**/*",
+    "tests/**/*.ts",
   ],
   "exclude": [
     "node_modules"

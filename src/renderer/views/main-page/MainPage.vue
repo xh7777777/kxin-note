@@ -64,7 +64,6 @@ import NoteView from '../../components/NoteView.vue';
 import PopMessage from '../../components/PopMessage.vue';
 import { useNotes } from '../../hooks/useNotes';
 import { useMessage } from '../../hooks/useMessage';
-import type { NotePage } from '@common/models/note.types';
 
 const {
   notePages,

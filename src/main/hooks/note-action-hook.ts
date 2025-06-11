@@ -10,7 +10,7 @@ import {
   BlockType,
   NoteIndexItem,
   NoteIndex,
-} from '../../common/models/note.types';
+} from '../../../customTypes/models/note.types';
 import { v4 as uuidv4 } from 'uuid';
 
 /**

@@ -7,6 +7,7 @@ import { useDisableButton } from './hooks/disable-button-hook';
 import { useProcessException } from '@main/hooks/exception-hook';
 import { useMenu } from '@main/hooks/menu-hook';
 import { registerNoteActionHandlers } from './hooks/note-action-hook';
+import { registerFileActionHandlers } from './hooks/file-hook';
 
 function onAppReady() {
   const { disableF12 } = useDisableButton();
@@ -20,6 +21,9 @@ function onAppReady() {
 
   // 注册笔记操作handlers
   registerNoteActionHandlers();
+
+  // 注册文件操作handlers
+  registerFileActionHandlers();
 
   new InitWindow().initWindow();
   if (process.env.NODE_ENV === 'development') {

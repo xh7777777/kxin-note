@@ -1,11 +1,14 @@
-import EditorJS from '@editorjs/editorjs';
 import Header from '@editorjs/header';
 import Paragraph from '@editorjs/paragraph';
 import Quote from '@editorjs/quote';
 import Delimiter from '@editorjs/delimiter';
 import EditorjsList from '@editorjs/list';
-import Undo from 'editorjs-undo';
 import AttachesTool from '@editorjs/attaches';
+
+/**
+ * 编辑器基础配置
+ * @description 编辑器基础配置，包括工具栏、快捷键、配置等
+ */
 
 export const editorBaseConfig = {
   tools: {

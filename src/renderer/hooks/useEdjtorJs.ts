@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import EditorJS from '@editorjs/editorjs';
 import Undo from 'editorjs-undo';
-import { NoteContent, NotePage } from '@common/models/note.types';
+import { NoteContent, NotePage } from '@customTypes/models/note.types';
 import { debounce } from 'lodash';
 import { editorBaseConfig } from '../utils/editorjs';
 

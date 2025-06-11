@@ -19,7 +19,7 @@ import {
   BlockType,
   NoteIndexItem,
   NoteIndex,
-} from '../../src/common/models/note.types';
+} from '../../customTypes/models/note.types';
 
 // Mock electron app
 jest.mock('electron', () => ({

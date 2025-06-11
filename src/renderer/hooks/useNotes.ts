@@ -3,7 +3,7 @@ import type {
   NoteIndexItem,
   NoteContent,
   NotePage,
-} from '@common/models/note.types';
+} from '@customTypes/models/note.types';
 
 function useNotes() {
   const activeNoteId = ref<string | null>(null);

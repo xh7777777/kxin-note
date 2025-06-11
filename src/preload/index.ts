@@ -74,6 +74,39 @@ contextBridge.exposeInMainWorld('noteAPI', {
   rebuildIndex: () => ipcRenderer.invoke('notes:rebuildIndex'),
 });
 
+// 暴露文件操作API
+contextBridge.exposeInMainWorld('fileAPI', {
+  // 上传文件
+  uploadFile: (sourcePath: string, options: any) =>
+    ipcRenderer.invoke('file:upload', sourcePath, options),
+
+  // 删除文件
+  deleteFile: (fileId: string) => ipcRenderer.invoke('file:delete', fileId),
+
+  // 获取文件信息
+  getFileInfo: (fileId: string) => ipcRenderer.invoke('file:getInfo', fileId),
+
+  // 获取文件列表
+  getFilesList: (filter: any, page?: number, pageSize?: number) =>
+    ipcRenderer.invoke('file:getList', filter, page, pageSize),
+
+  // 获取文件统计
+  getFileStats: (noteId?: string) =>
+    ipcRenderer.invoke('file:getStats', noteId),
+
+  // 批量删除笔记文件
+  deleteNoteFiles: (noteId: string) =>
+    ipcRenderer.invoke('file:deleteNoteFiles', noteId),
+
+  // 选择文件对话框
+  selectFiles: (options: any) =>
+    ipcRenderer.invoke('file:selectFiles', options),
+
+  // 选择目录对话框
+  selectDirectory: (options: any) =>
+    ipcRenderer.invoke('file:selectDirectory', options),
+});
+
 contextBridge.exposeInMainWorld('systemInfo', {
   platform: platform(),
   release: release(),

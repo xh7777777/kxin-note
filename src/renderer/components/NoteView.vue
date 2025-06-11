@@ -30,7 +30,7 @@
 import { ref, onMounted, watch, onUnmounted } from 'vue';
 import { useNotes } from '../hooks/useNotes';
 import { useEditorJs } from '../hooks/useEdjtorJs';
-import type { NoteContent } from '@common/models/note.types';
+import type { NoteContent } from '@customTypes/models/note.types';
 
 const props = defineProps<{
   noteId: string;
