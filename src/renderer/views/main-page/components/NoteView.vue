@@ -40,10 +40,14 @@ const emit = defineEmits<{
   (e: 'update-note-item', noteId: string, key: string, value: any): void;
 }>();
 
-const { getNoteById } = useNotes();
+const { getNoteById, updateContent } = useNotes();
 
-const { editor, containerRef, initEditor, noteContent, noteInfo } =
-  useEditorJs();
+const { editor, containerRef, initEditor, noteContent, noteInfo, saveEditor } =
+  useEditorJs({
+    onSave: async (data: NoteContent) => {
+      await updateContent(noteInfo.value.id, data);
+    },
+  });
 
 const changeNotePage = async (noteId: string) => {
   if (editor) {
@@ -61,13 +65,13 @@ const changeNotePage = async (noteId: string) => {
 };
 
 const handleUpdateNoteItem = (noteId: string, key: string, value: any) => {
-  console.log('handleUpdateNoteItem', noteId, key, value);
   emit('update-note-item', noteId, key, value);
 };
 
 onMounted(() => {});
 
-onUnmounted(() => {
+onUnmounted(async () => {
+  await saveEditor();
   if (editor) {
     editor.destroy();
   }

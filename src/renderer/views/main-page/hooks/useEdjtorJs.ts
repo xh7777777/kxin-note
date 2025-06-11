@@ -7,6 +7,7 @@ import Delimiter from '@editorjs/delimiter';
 import EditorjsList from '@editorjs/list';
 import Undo from 'editorjs-undo';
 import { NoteContent, NotePage } from '@common/models/note.types';
+import { debounce } from 'lodash';
 
 const editorBaseConfig = {
   tools: {
@@ -49,7 +50,12 @@ const editorBaseConfig = {
   },
 };
 
-function useEditorJs() {
+export interface UseEditorJsProps {
+  onSave: (data: NoteContent) => Promise<void>;
+  onReady?: () => void;
+}
+
+function useEditorJs({ onSave, onReady }: UseEditorJsProps) {
   const noteInfo = ref<NotePage | null>(null);
   const noteContent = ref<NoteContent | null>(null);
   const containerRef = ref<HTMLDivElement | null>(null);
@@ -57,40 +63,36 @@ function useEditorJs() {
   const saveLoading = ref(false);
 
   let editor = null;
-
   const initEditor = () => {
     editor = new EditorJS({
       ...editorBaseConfig,
       holder: containerRef.value,
       data: noteContent.value || { blocks: [] },
       onReady: () => {
-        console.log('Editor.js is ready to work!');
         renderEditor();
         new Undo({ editor });
+        onReady?.();
       },
-      onChange: () => {
-        console.log('Editor.js content changed!');
-      },
+      onChange: debounce(() => {
+        saveEditor();
+      }, 2000),
     });
   };
 
-  const saveEditor = () => {
-    if (readOnly.value) {
+  const saveEditor = async () => {
+    if (readOnly.value || !editor) {
       return;
     }
     saveLoading.value = true;
-    editor
-      .save()
-      .then(outputData => {
-        console.log('saveEditor', outputData);
-        noteContent.value = outputData;
-      })
-      .catch(err => {
-        console.error(err);
-      })
-      .finally(() => {
-        saveLoading.value = false;
-      });
+    try {
+      const outputData = await editor.save();
+      console.log('saveEditor', outputData);
+      await onSave(outputData);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      saveLoading.value = false;
+    }
   };
 
   const renderEditor = () => {
