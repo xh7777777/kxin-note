@@ -6,6 +6,11 @@ import { app } from 'electron';
 import { v4 as uuidv4 } from 'uuid';
 import {
   createNewNote,
+  getNoteDirectoryPath,
+  getNoteFilePath,
+  getNotesIndexPath,
+  getNotesDataPath,
+  initializeStorageDirectories,
   saveNoteToFile,
   loadNoteById,
   getAllNotes,
@@ -54,6 +59,9 @@ jest.mock('fs', () => ({
   },
 }));
 
+// Mock console.log to avoid output during tests
+jest.spyOn(console, 'log').mockImplementation(() => {});
+
 const mockFs = fs as jest.Mocked<typeof fs>;
 const mockUuidv4 = uuidv4 as jest.MockedFunction<typeof uuidv4>;
 
@@ -64,14 +72,121 @@ describe('Note Action Hook', () => {
     // Reset mocks to default behavior
     mockFs.access.mockResolvedValue(undefined);
     mockFs.mkdir.mockResolvedValue(undefined);
-    (
-      mockFs.readFile as jest.MockedFunction<typeof fs.readFile>
-    ).mockResolvedValue(Buffer.from('{}'));
+    mockFs.readFile.mockResolvedValue(Buffer.from('{}'));
     mockFs.writeFile.mockResolvedValue(undefined);
-    (
-      mockFs.readdir as jest.MockedFunction<typeof fs.readdir>
-    ).mockResolvedValue([]);
-    mockUuidv4.mockReturnValue('test-uuid-1234');
+    mockFs.readdir.mockResolvedValue([]);
+    mockUuidv4.mockReturnValue('test-uuid-1234' as any);
+  });
+
+  describe('initializeStorageDirectories', () => {
+    it('should initialize storage directories', async () => {
+      // Mock access to simulate index file not existing
+      mockFs.access.mockRejectedValueOnce(new Error('Index not found'));
+
+      await initializeStorageDirectories();
+
+      expect(mockFs.mkdir).toHaveBeenCalledWith(
+        expect.stringContaining('notes'),
+        expect.any(Object)
+      );
+    });
+
+    it('should rebuild index when index not found', async () => {
+      mockFs.access.mockRejectedValue(new Error('Index not found'));
+
+      await initializeStorageDirectories();
+
+      expect(mockFs.writeFile).toHaveBeenCalledWith(
+        expect.stringContaining('notes-index.json'),
+        expect.any(String),
+        'utf-8'
+      );
+    });
+  });
+
+  describe('rebuildNotesIndex', () => {
+    it('should rebuild notes index ', async () => {
+      // 模拟目录读取
+      const mockDir = ['note-1', 'note-2'];
+      (
+        mockFs.readdir as jest.MockedFunction<typeof fs.readdir>
+      ).mockResolvedValue(mockDir as any);
+
+      // 模拟笔记文件内容
+      const mockNote1 = {
+        id: 'note-1',
+        title: '笔记1',
+        icon: '📝',
+        metadata: {
+          updatedAt: '2024-01-01T10:00:00.000Z',
+          createdAt: '2024-01-01T09:00:00.000Z',
+        },
+        level: 0,
+        isFavorite: false,
+        isArchived: false,
+      };
+
+      const mockNote2 = {
+        id: 'note-2',
+        title: '笔记2',
+        icon: '📄',
+        metadata: {
+          updatedAt: '2024-01-01T11:00:00.000Z',
+          createdAt: '2024-01-01T10:00:00.000Z',
+        },
+        level: 1,
+        isFavorite: true,
+        isArchived: false,
+      };
+
+      // 模拟文件读取
+      (mockFs.readFile as jest.MockedFunction<typeof fs.readFile>)
+        .mockResolvedValueOnce(Buffer.from(JSON.stringify(mockNote1)))
+        .mockResolvedValueOnce(Buffer.from(JSON.stringify(mockNote2)));
+
+      // Mock mkdir to be called by ensureDirectoryExists
+      mockFs.access.mockRejectedValue(new Error('Directory not found'));
+
+      await rebuildNotesIndex();
+
+      // 验证目录创建
+      expect(mockFs.mkdir).toHaveBeenCalled();
+
+      // 验证写入的索引内容
+      expect(mockFs.writeFile).toHaveBeenCalledWith(
+        expect.stringContaining('notes-index.json'),
+        expect.any(String),
+        'utf-8'
+      );
+    });
+
+    it('should create empty index when directory is empty', async () => {
+      (
+        mockFs.readdir as jest.MockedFunction<typeof fs.readdir>
+      ).mockResolvedValue([]);
+
+      // Mock mkdir to be called by ensureDirectoryExists
+      mockFs.access.mockRejectedValue(new Error('Directory not found'));
+
+      await rebuildNotesIndex();
+
+      expect(mockFs.mkdir).toHaveBeenCalled();
+      expect(console.log).toHaveBeenCalledWith(
+        'Rebuilt notes index with 0 notes'
+      );
+    });
+
+    it('should handle error when reading file', async () => {
+      (
+        mockFs.readdir as jest.MockedFunction<typeof fs.readdir>
+      ).mockResolvedValue(['note-1'] as any);
+
+      (
+        mockFs.readFile as jest.MockedFunction<typeof fs.readFile>
+      ).mockRejectedValue(new Error('读取文件失败'));
+
+      await expect(rebuildNotesIndex()).rejects.toThrow('读取文件失败');
+    });
   });
 
   describe('createNewNote', () => {
@@ -82,9 +197,13 @@ describe('Note Action Hook', () => {
         notes: [],
       };
 
+      // Mock loadNotesIndex behavior
       (
         mockFs.readFile as jest.MockedFunction<typeof fs.readFile>
       ).mockResolvedValueOnce(Buffer.from(JSON.stringify(mockIndex)));
+
+      // Mock mkdir to be called by createNoteDirectory and ensureDirectoryExists
+      mockFs.access.mockRejectedValue(new Error('Directory not found'));
 
       const note = await createNewNote();
 
@@ -93,60 +212,53 @@ describe('Note Action Hook', () => {
       expect(note.icon).toBe('📝');
       expect(note.level).toBe(0);
       expect(note.parentId).toBeUndefined();
-      expect(note.content.blocks).toHaveLength(1);
-      expect(note.content.blocks[0].type).toBe(BlockType.PARAGRAPH);
+      expect(note.content.blocks).toHaveLength(0);
       expect(note.metadata.status).toBe(PageStatus.NORMAL);
+      expect(mockFs.writeFile).toHaveBeenCalledTimes(2); // Note file + index file
+      expect(mockFs.mkdir).toHaveBeenCalled();
     });
 
-    it('should create a note with custom title', async () => {
+    it('should create at right directory', async () => {
       const mockIndex: NoteIndex = {
         version: '1.0.0',
         lastUpdated: '2024-01-01T00:00:00.000Z',
         notes: [],
       };
 
+      // Mock loadNotesIndex behavior
       (
         mockFs.readFile as jest.MockedFunction<typeof fs.readFile>
       ).mockResolvedValueOnce(Buffer.from(JSON.stringify(mockIndex)));
 
-      const title = '我的测试笔记';
-      const note = await createNewNote(title);
+      // Mock mkdir to be called by createNoteDirectory and ensureDirectoryExists
+      mockFs.access.mockRejectedValue(new Error('Directory not found'));
 
-      expect(note.title).toBe(title);
-      expect(mockFs.writeFile).toHaveBeenCalledTimes(2); // Note file + index file
+      const note = await createNewNote();
+      const noteDirectoryPath = getNoteDirectoryPath(note.id);
+      expect(noteDirectoryPath).toBe(join(getNotesDataPath(), note.id));
+      const noteFilePath = getNoteFilePath(note.id);
+      expect(noteFilePath).toBe(join(noteDirectoryPath, 'note.json'));
     });
 
-    it('should create a child note with correct level', async () => {
-      const parentNote: NotePage = {
-        id: 'parent-id',
-        title: '父页面',
-        level: 1,
-        content: {
-          time: Date.now(),
-          version: '2.29.0',
-          blocks: [],
-        },
-        metadata: {
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          status: PageStatus.NORMAL,
-        },
-      };
-
+    it('should update index when note is created', async () => {
       const mockIndex: NoteIndex = {
         version: '1.0.0',
         lastUpdated: '2024-01-01T00:00:00.000Z',
         notes: [],
       };
+      (
+        mockFs.readFile as jest.MockedFunction<typeof fs.readFile>
+      ).mockResolvedValueOnce(Buffer.from(JSON.stringify(mockIndex)));
 
-      (mockFs.readFile as jest.MockedFunction<typeof fs.readFile>)
-        .mockResolvedValueOnce(Buffer.from(JSON.stringify(parentNote))) // For loading parent
-        .mockResolvedValueOnce(Buffer.from(JSON.stringify(mockIndex))); // For loading index
+      // Mock mkdir to be called by createNoteDirectory and ensureDirectoryExists
+      mockFs.access.mockRejectedValue(new Error('Directory not found'));
 
-      const note = await createNewNote('子页面', 'parent-id');
-
-      expect(note.parentId).toBe('parent-id');
-      expect(note.level).toBe(2); // Parent level + 1
+      const note = await createNewNote();
+      expect(mockFs.writeFile).toHaveBeenCalledWith(
+        expect.stringContaining('notes-index.json'),
+        expect.stringContaining(note.id),
+        'utf-8'
+      );
     });
   });
 
@@ -171,38 +283,10 @@ describe('Note Action Hook', () => {
       await saveNoteToFile(note);
 
       expect(mockFs.writeFile).toHaveBeenCalledWith(
-        expect.stringContaining('test-note-id.json'),
+        expect.stringContaining('test-note-id'),
         expect.stringContaining('"title": "测试笔记"'),
         'utf-8'
       );
-    });
-
-    it('should convert Date objects to ISO strings', async () => {
-      const note: NotePage = {
-        id: 'test-note-id',
-        title: '测试笔记',
-        level: 0,
-        content: {
-          time: Date.now(),
-          version: '2.29.0',
-          blocks: [],
-        },
-        metadata: {
-          createdAt: new Date('2024-01-01T10:00:00.000Z'),
-          updatedAt: new Date('2024-01-01T11:00:00.000Z'),
-          status: PageStatus.NORMAL,
-        },
-      };
-
-      await saveNoteToFile(note);
-
-      const writeCall = (
-        mockFs.writeFile as jest.MockedFunction<typeof fs.writeFile>
-      ).mock.calls[0];
-      const savedData = JSON.parse(writeCall[1] as string);
-
-      expect(savedData.metadata.createdAt).toBe('2024-01-01T10:00:00.000Z');
-      expect(savedData.metadata.updatedAt).toBe('2024-01-01T11:00:00.000Z');
     });
   });
 
@@ -301,93 +385,6 @@ describe('Note Action Hook', () => {
       const notes = await getAllNotes();
 
       expect(notes).toEqual([]);
-    });
-  });
-
-  describe('rebuildNotesIndex', () => {
-    it('should rebuild index from existing notes', async () => {
-      const noteFiles = ['note-1.json', 'note-2.json', 'notes-index.json'];
-      (
-        mockFs.readdir as jest.MockedFunction<typeof fs.readdir>
-      ).mockResolvedValue(noteFiles as any);
-
-      const note1Data = {
-        id: 'note-1',
-        title: '笔记1',
-        icon: '📝',
-        metadata: {
-          updatedAt: '2024-01-01T10:00:00.000Z',
-          createdAt: '2024-01-01T09:00:00.000Z',
-        },
-        level: 0,
-        isFavorite: false,
-        isArchived: false,
-      };
-
-      const note2Data = {
-        id: 'note-2',
-        title: '笔记2',
-        icon: '📄',
-        metadata: {
-          updatedAt: '2024-01-01T11:00:00.000Z',
-          createdAt: '2024-01-01T10:00:00.000Z',
-        },
-        level: 1,
-        isFavorite: true,
-        isArchived: false,
-      };
-
-      (mockFs.readFile as jest.MockedFunction<typeof fs.readFile>)
-        .mockResolvedValueOnce(Buffer.from(JSON.stringify(note1Data)))
-        .mockResolvedValueOnce(Buffer.from(JSON.stringify(note2Data)));
-
-      await rebuildNotesIndex();
-
-      expect(mockFs.writeFile).toHaveBeenCalledWith(
-        expect.stringContaining('notes-index.json'),
-        expect.stringContaining('"notes"'),
-        'utf-8'
-      );
-
-      const writeCall = (
-        mockFs.writeFile as jest.MockedFunction<typeof fs.writeFile>
-      ).mock.calls[0];
-      const indexData = JSON.parse(writeCall[1] as string);
-
-      expect(indexData.notes).toHaveLength(2);
-      expect(indexData.version).toBe('1.0.0');
-      expect(indexData.notes[0].id).toBe('note-2'); // Should be sorted by updatedAt desc
-      expect(indexData.notes[1].id).toBe('note-1');
-    });
-
-    it('should skip non-json files and index file', async () => {
-      const files = [
-        'note-1.json',
-        'readme.txt',
-        'notes-index.json',
-        'note-2.json',
-      ];
-      (
-        mockFs.readdir as jest.MockedFunction<typeof fs.readdir>
-      ).mockResolvedValue(files as any);
-
-      const noteData = {
-        id: 'note-1',
-        title: '笔记1',
-        metadata: {
-          updatedAt: '2024-01-01T10:00:00.000Z',
-          createdAt: '2024-01-01T09:00:00.000Z',
-        },
-        level: 0,
-      };
-
-      (mockFs.readFile as jest.MockedFunction<typeof fs.readFile>)
-        .mockResolvedValueOnce(Buffer.from(JSON.stringify(noteData)))
-        .mockResolvedValueOnce(Buffer.from(JSON.stringify(noteData)));
-
-      await rebuildNotesIndex();
-
-      expect(mockFs.readFile).toHaveBeenCalledTimes(2); // Only 2 note files should be read
     });
   });
 

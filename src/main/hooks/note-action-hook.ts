@@ -14,19 +14,6 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 
 /**
- * 笔记索引条目接口
- */
-
-/**
- * 获取项目根目录
- */
-const getProjectRoot = () => {
-  return app.isPackaged
-    ? join(app.getAppPath(), '..', '..')
-    : join(__dirname, '..', '..', '..');
-};
-
-/**
  * 笔记数据存储路径
  */
 const getNotesDataPath = () => {
@@ -41,6 +28,27 @@ const getNotesDataPath = () => {
   // }
 };
 
+/**
+ * 为单个笔记创建文件夹
+ */
+const createNoteDirectory = async (noteId: string): Promise<void> => {
+  const noteDirectoryPath = getNoteDirectoryPath(noteId);
+  await ensureDirectoryExists(noteDirectoryPath);
+};
+
+/**
+ * 获取单个笔记的文件夹路径
+ */
+const getNoteDirectoryPath = (noteId: string): string => {
+  return join(getNotesDataPath(), noteId);
+};
+
+/**
+ * 获取笔记内容文件路径
+ */
+const getNoteFilePath = (noteId: string): string => {
+  return join(getNoteDirectoryPath(noteId), 'note.json');
+};
 /**
  * 获取笔记索引文件路径
  */
@@ -101,7 +109,7 @@ const saveNotesIndex = async (index: NoteIndex): Promise<void> => {
  */
 const updateNoteInIndex = async (note: NotePage): Promise<void> => {
   const index = await loadNotesIndex();
-  const filePath = join(getNotesDataPath(), `${note.id}.json`);
+  const filePath = getNoteFilePath(note.id);
 
   const indexItem: NoteIndexItem = {
     id: note.id,
@@ -150,34 +158,42 @@ const removeNoteFromIndex = async (noteId: string): Promise<void> => {
 const rebuildNotesIndex = async (): Promise<void> => {
   const notesPath = getNotesDataPath();
   await ensureDirectoryExists(notesPath);
-
-  const files = await fs.readdir(notesPath);
+  const dir = await fs.readdir(notesPath);
   const notes: NoteIndexItem[] = [];
-
-  for (const file of files) {
-    if (file.endsWith('.json') && file !== 'notes-index.json') {
-      try {
-        const filePath = join(notesPath, file);
-        const data = await fs.readFile(filePath, 'utf-8');
-        const note = JSON.parse(data);
-
-        notes.push({
-          id: note.id,
-          title: note.title,
-          icon: note.icon,
-          filePath,
-          updatedAt: note.metadata.updatedAt,
-          createdAt: note.metadata.createdAt,
-          parentId: note.parentId,
-          level: note.level,
-          isFavorite: note.isFavorite,
-          isArchived: note.isArchived,
-        });
-      } catch (error) {
-        console.error(`Failed to process note file ${file}:`, error);
-      }
-    }
+  for (const file of dir) {
+    const filePath = getNoteFilePath(file);
+    const data = await fs.readFile(filePath, 'utf-8');
+    const note = JSON.parse(data);
+    notes.push(note);
   }
+
+  // const files = await fs.readdir(notesPath);
+  // const notes: NoteIndexItem[] = [];
+
+  // for (const file of files) {
+  //   if (file.endsWith('.json') && file !== 'notes-index.json') {
+  //     try {
+  //       const filePath = join(notesPath, file);
+  //       const data = await fs.readFile(filePath, 'utf-8');
+  //       const note = JSON.parse(data);
+
+  //       notes.push({
+  //         id: note.id,
+  //         title: note.title,
+  //         icon: note.icon,
+  //         filePath,
+  //         updatedAt: note.metadata.updatedAt,
+  //         createdAt: note.metadata.createdAt,
+  //         parentId: note.parentId,
+  //         level: note.level,
+  //         isFavorite: note.isFavorite,
+  //         isArchived: note.isArchived,
+  //       });
+  //     } catch (error) {
+  //       console.error(`Failed to process note file ${file}:`, error);
+  //     }
+  //   }
+  // }
 
   // 按更新时间倒序排列
   notes.sort(
@@ -220,7 +236,9 @@ const createNewNote = async (
   title: string = '',
   parentId?: string
 ): Promise<NotePage> => {
+  // 创建笔记文件夹
   const noteId = generateUniqueId();
+  await createNoteDirectory(noteId);
   const now = new Date();
 
   // 如果有父页面，计算层级
@@ -268,10 +286,9 @@ const createNewNote = async (
  * 保存笔记到文件
  */
 const saveNoteToFile = async (note: NotePage): Promise<void> => {
-  const notesPath = getNotesDataPath();
-  await ensureDirectoryExists(notesPath);
-
-  const filePath = join(notesPath, `${note.id}.json`);
+  const noteDirectoryPath = getNoteDirectoryPath(note.id);
+  await ensureDirectoryExists(noteDirectoryPath);
+  const filePath = getNoteFilePath(note.id);
 
   const noteData = {
     ...note,
@@ -289,8 +306,7 @@ const saveNoteToFile = async (note: NotePage): Promise<void> => {
  * 根据ID加载笔记
  */
 const loadNoteById = async (noteId: string): Promise<NotePage> => {
-  const notesPath = getNotesDataPath();
-  const filePath = join(notesPath, `${noteId}.json`);
+  const filePath = getNoteFilePath(noteId);
 
   try {
     const noteData = await fs.readFile(filePath, 'utf-8');
@@ -381,11 +397,8 @@ const updateNoteFields = async (
  */
 const deleteNote = async (noteId: string): Promise<void> => {
   try {
-    const notesPath = getNotesDataPath();
-    const filePath = join(notesPath, `${noteId}.json`);
-
-    // 删除文件
-    await fs.unlink(filePath);
+    const noteDirectoryPath = getNoteDirectoryPath(noteId);
+    await fs.rmdir(noteDirectoryPath, { recursive: true });
 
     // 从索引中移除
     await removeNoteFromIndex(noteId);
@@ -696,4 +709,9 @@ export {
   rebuildNotesIndex,
   updateNoteInIndex,
   removeNoteFromIndex,
+  getNoteDirectoryPath,
+  getNoteFilePath,
+  getNotesIndexPath,
+  getNotesDataPath,
+  initializeStorageDirectories,
 };
