@@ -1,7 +1,6 @@
 import { ipcMain, dialog } from 'electron';
 import { promises as fs, existsSync, statSync } from 'fs';
 import { join, dirname, extname, basename, relative } from 'path';
-import { createHash } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { app } from 'electron';
 
@@ -15,29 +14,28 @@ import {
   FileOperationResult,
   FileUsageType,
   FileErrorCode,
-  FileIndex,
-  FileIndexItem,
 } from '../../../customTypes/models/file.types';
 
 /**
  * 获取文件存储根目录
  */
-const getFilesDataPath = (): string => {
-  const isDev = process.env.NODE_ENV === 'development';
-  if (isDev) {
-    const projectRoot = process.cwd();
-    return join(projectRoot, 'assets', 'files');
-  } else {
-    const userDataPath = app.getPath('userData');
-    return join(userDataPath, 'files');
-  }
+const getFilesDataPath = () => {
+  const userDataPath = app.getPath('userData');
+  return join(userDataPath, 'files');
 };
 
 /**
- * 获取文件索引路径
+ * 获取笔记文件目录
  */
-const getFilesIndexPath = (): string => {
-  return join(getFilesDataPath(), 'files-index.json');
+const getNoteFilesPath = (noteId: string): string => {
+  return join(getFilesDataPath(), noteId);
+};
+
+/**
+ * 获取文件元数据路径
+ */
+const getFileMetadataPath = (noteId: string, fileId: string): string => {
+  return join(getNoteFilesPath(noteId), `${fileId}.json`);
 };
 
 /**
@@ -47,16 +45,6 @@ const ensureDirectoryExists = async (dirPath: string): Promise<void> => {
   if (!existsSync(dirPath)) {
     await fs.mkdir(dirPath, { recursive: true });
   }
-};
-
-/**
- * 生成文件哈希值
- */
-const generateFileHash = async (filePath: string): Promise<string> => {
-  const fileBuffer = await fs.readFile(filePath);
-  const hash = createHash('md5');
-  hash.update(fileBuffer);
-  return hash.digest('hex');
 };
 
 /**
@@ -85,85 +73,6 @@ const getMimeType = (extension: string): string => {
 };
 
 /**
- * 加载文件索引
- */
-const loadFilesIndex = async (): Promise<FileIndex> => {
-  const indexPath = getFilesIndexPath();
-
-  try {
-    if (!existsSync(indexPath)) {
-      const newIndex: FileIndex = {
-        version: '1.0.0',
-        lastUpdated: new Date().toISOString(),
-        files: [],
-      };
-      await saveFilesIndex(newIndex);
-      return newIndex;
-    }
-
-    const indexContent = await fs.readFile(indexPath, 'utf-8');
-    return JSON.parse(indexContent);
-  } catch (error) {
-    console.error('加载文件索引失败:', error);
-    throw new Error('Failed to load files index');
-  }
-};
-
-/**
- * 保存文件索引
- */
-const saveFilesIndex = async (index: FileIndex): Promise<void> => {
-  const indexPath = getFilesIndexPath();
-  await ensureDirectoryExists(dirname(indexPath));
-
-  try {
-    await fs.writeFile(indexPath, JSON.stringify(index, null, 2), 'utf-8');
-  } catch (error) {
-    console.error('保存文件索引失败:', error);
-    throw new Error('Failed to save files index');
-  }
-};
-
-/**
- * 更新文件索引中的文件信息
- */
-const updateFileInIndex = async (fileInfo: FileInfo): Promise<void> => {
-  const index = await loadFilesIndex();
-
-  const indexItem: FileIndexItem = {
-    id: fileInfo.id,
-    name: fileInfo.name,
-    noteId: fileInfo.noteId,
-    fileType: fileInfo.fileType,
-    size: fileInfo.size,
-    relativePath: fileInfo.relativePath,
-    createdAt: fileInfo.createdAt.toISOString(),
-    updatedAt: fileInfo.updatedAt.toISOString(),
-    hash: fileInfo.hash,
-  };
-
-  const existingIndex = index.files.findIndex(item => item.id === fileInfo.id);
-  if (existingIndex !== -1) {
-    index.files[existingIndex] = indexItem;
-  } else {
-    index.files.push(indexItem);
-  }
-
-  index.lastUpdated = new Date().toISOString();
-  await saveFilesIndex(index);
-};
-
-/**
- * 从索引中移除文件
- */
-const removeFileFromIndex = async (fileId: string): Promise<void> => {
-  const index = await loadFilesIndex();
-  index.files = index.files.filter(item => item.id !== fileId);
-  index.lastUpdated = new Date().toISOString();
-  await saveFilesIndex(index);
-};
-
-/**
  * 生成唯一的文件名
  */
 const generateUniqueFileName = (
@@ -175,6 +84,113 @@ const generateUniqueFileName = (
   const extension = extname(originalName);
   const baseName = basename(originalName, extension);
   return `${noteId}_${baseName}_${timestamp}_${random}${extension}`;
+};
+
+/**
+ * 保存文件元数据
+ */
+const saveFileMetadata = async (fileInfo: FileInfo): Promise<void> => {
+  const metadataPath = getFileMetadataPath(fileInfo.noteId, fileInfo.id);
+  await ensureDirectoryExists(dirname(metadataPath));
+
+  const metadata = {
+    id: fileInfo.id,
+    name: fileInfo.name,
+    originalName: fileInfo.originalName,
+    extension: fileInfo.extension,
+    size: fileInfo.size,
+    mimeType: fileInfo.mimeType,
+    relativePath: fileInfo.relativePath,
+    noteId: fileInfo.noteId,
+    fileType: fileInfo.fileType,
+    createdAt: fileInfo.createdAt.toISOString(),
+    updatedAt: fileInfo.updatedAt.toISOString(),
+    isDeleted: fileInfo.isDeleted,
+    deletedAt: fileInfo.deletedAt?.toISOString(),
+    description: fileInfo.description,
+    tags: fileInfo.tags,
+  };
+
+  await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2), 'utf-8');
+};
+
+/**
+ * 加载文件元数据
+ */
+const loadFileMetadata = async (
+  noteId: string,
+  fileId: string
+): Promise<FileInfo | null> => {
+  try {
+    const metadataPath = getFileMetadataPath(noteId, fileId);
+
+    if (!existsSync(metadataPath)) {
+      return null;
+    }
+
+    const metadataContent = await fs.readFile(metadataPath, 'utf-8');
+    const metadata = JSON.parse(metadataContent);
+
+    const filesPath = getFilesDataPath();
+    const absolutePath = join(filesPath, metadata.relativePath);
+
+    return {
+      id: metadata.id,
+      name: metadata.name,
+      originalName: metadata.originalName,
+      extension: metadata.extension,
+      size: metadata.size,
+      mimeType: metadata.mimeType,
+      relativePath: metadata.relativePath,
+      absolutePath,
+      noteId: metadata.noteId,
+      fileType: metadata.fileType,
+      createdAt: new Date(metadata.createdAt),
+      updatedAt: new Date(metadata.updatedAt),
+      isDeleted: metadata.isDeleted || false,
+      deletedAt: metadata.deletedAt ? new Date(metadata.deletedAt) : undefined,
+      description: metadata.description,
+      tags: metadata.tags,
+    };
+  } catch (error) {
+    console.error('加载文件元数据失败:', error);
+    return null;
+  }
+};
+
+/**
+ * 获取笔记下的所有文件元数据
+ */
+const loadNoteFileMetadata = async (
+  noteId: string,
+  includeDeleted = false
+): Promise<FileInfo[]> => {
+  try {
+    const noteFilesPath = getNoteFilesPath(noteId);
+
+    if (!existsSync(noteFilesPath)) {
+      return [];
+    }
+
+    const files = await fs.readdir(noteFilesPath);
+    const metadataFiles = files.filter(file => file.endsWith('.json'));
+
+    const fileInfos: FileInfo[] = [];
+
+    for (const metadataFile of metadataFiles) {
+      const fileId = metadataFile.replace('.json', '');
+      const fileInfo = await loadFileMetadata(noteId, fileId);
+
+      if (fileInfo && (includeDeleted || !fileInfo.isDeleted)) {
+        fileInfos.push(fileInfo);
+      }
+    }
+
+    return fileInfos;
+  } catch (error) {
+    console.error('加载笔记文件元数据失败:', error);
+    return [];
+  }
 };
 
 /**
@@ -200,18 +216,15 @@ const uploadFile = async (
     const fileName = generateUniqueFileName(originalName, options.noteId);
 
     // 创建目标目录结构
-    const filesPath = getFilesDataPath();
-    const noteFilesPath = join(filesPath, options.noteId);
+    const noteFilesPath = getNoteFilesPath(options.noteId);
     await ensureDirectoryExists(noteFilesPath);
 
     const targetPath = join(noteFilesPath, fileName);
+    const filesPath = getFilesDataPath();
     const relativePath = relative(filesPath, targetPath);
 
     // 复制文件
     await fs.copyFile(sourcePath, targetPath);
-
-    // 生成文件哈希
-    const hash = await generateFileHash(targetPath);
 
     // 创建文件信息
     const fileInfo: FileInfo = {
@@ -227,13 +240,13 @@ const uploadFile = async (
       fileType: options.fileType,
       createdAt: new Date(),
       updatedAt: new Date(),
-      hash,
+      isDeleted: false,
       description: options.description,
       tags: options.tags,
     };
 
-    // 更新索引
-    await updateFileInIndex(fileInfo);
+    // 保存元数据
+    await saveFileMetadata(fileInfo);
 
     return {
       success: true,
@@ -250,14 +263,16 @@ const uploadFile = async (
 };
 
 /**
- * 删除文件
+ * 软删除文件
  */
-const deleteFile = async (fileId: string): Promise<FileOperationResult> => {
+const deleteFile = async (
+  fileId: string,
+  noteId: string
+): Promise<FileOperationResult> => {
   try {
-    const index = await loadFilesIndex();
-    const fileItem = index.files.find(item => item.id === fileId);
+    const fileInfo = await loadFileMetadata(noteId, fileId);
 
-    if (!fileItem) {
+    if (!fileInfo) {
       return {
         success: false,
         error: '文件不存在',
@@ -265,15 +280,13 @@ const deleteFile = async (fileId: string): Promise<FileOperationResult> => {
       };
     }
 
-    const filePath = join(getFilesDataPath(), fileItem.relativePath);
+    // 标记为已删除
+    fileInfo.isDeleted = true;
+    fileInfo.deletedAt = new Date();
+    fileInfo.updatedAt = new Date();
 
-    // 删除文件
-    if (existsSync(filePath)) {
-      await fs.unlink(filePath);
-    }
-
-    // 从索引中移除
-    await removeFileFromIndex(fileId);
+    // 保存更新的元数据
+    await saveFileMetadata(fileInfo);
 
     return {
       success: true,
@@ -290,46 +303,104 @@ const deleteFile = async (fileId: string): Promise<FileOperationResult> => {
 };
 
 /**
+ * 永久删除文件
+ */
+const permanentDeleteFile = async (
+  fileId: string,
+  noteId: string
+): Promise<FileOperationResult> => {
+  try {
+    const fileInfo = await loadFileMetadata(noteId, fileId);
+
+    if (!fileInfo) {
+      return {
+        success: false,
+        error: '文件不存在',
+        errorCode: FileErrorCode.FILE_NOT_FOUND,
+      };
+    }
+
+    // 删除实际文件
+    if (existsSync(fileInfo.absolutePath)) {
+      await fs.unlink(fileInfo.absolutePath);
+    }
+
+    // 删除元数据文件
+    const metadataPath = getFileMetadataPath(noteId, fileId);
+    if (existsSync(metadataPath)) {
+      await fs.unlink(metadataPath);
+    }
+
+    return {
+      success: true,
+      affectedCount: 1,
+    };
+  } catch (error) {
+    console.error('永久删除文件失败:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '未知错误',
+      errorCode: FileErrorCode.UNKNOWN_ERROR,
+    };
+  }
+};
+
+/**
+ * 恢复已删除的文件
+ */
+const restoreFile = async (
+  fileId: string,
+  noteId: string
+): Promise<FileOperationResult> => {
+  try {
+    const fileInfo = await loadFileMetadata(noteId, fileId);
+
+    if (!fileInfo) {
+      return {
+        success: false,
+        error: '文件不存在',
+        errorCode: FileErrorCode.FILE_NOT_FOUND,
+      };
+    }
+
+    if (!fileInfo.isDeleted) {
+      return {
+        success: false,
+        error: '文件未被删除',
+        errorCode: FileErrorCode.UNKNOWN_ERROR,
+      };
+    }
+
+    // 恢复文件
+    fileInfo.isDeleted = false;
+    fileInfo.deletedAt = undefined;
+    fileInfo.updatedAt = new Date();
+
+    // 保存更新的元数据
+    await saveFileMetadata(fileInfo);
+
+    return {
+      success: true,
+      affectedCount: 1,
+    };
+  } catch (error) {
+    console.error('文件恢复失败:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '未知错误',
+      errorCode: FileErrorCode.UNKNOWN_ERROR,
+    };
+  }
+};
+
+/**
  * 获取文件信息
  */
-const getFileInfo = async (fileId: string): Promise<FileInfo | null> => {
-  try {
-    const index = await loadFilesIndex();
-    const fileItem = index.files.find(item => item.id === fileId);
-
-    if (!fileItem) {
-      return null;
-    }
-
-    const filePath = join(getFilesDataPath(), fileItem.relativePath);
-
-    if (!existsSync(filePath)) {
-      // 文件已不存在，从索引中移除
-      await removeFileFromIndex(fileId);
-      return null;
-    }
-
-    const fileInfo: FileInfo = {
-      id: fileItem.id,
-      name: fileItem.name,
-      originalName: fileItem.name,
-      extension: extname(fileItem.name),
-      size: fileItem.size,
-      mimeType: getMimeType(extname(fileItem.name)),
-      relativePath: fileItem.relativePath,
-      absolutePath: filePath,
-      noteId: fileItem.noteId,
-      fileType: fileItem.fileType,
-      createdAt: new Date(fileItem.createdAt),
-      updatedAt: new Date(fileItem.updatedAt),
-      hash: fileItem.hash,
-    };
-
-    return fileInfo;
-  } catch (error) {
-    console.error('获取文件信息失败:', error);
-    return null;
-  }
+const getFileInfo = async (
+  fileId: string,
+  noteId: string
+): Promise<FileInfo | null> => {
+  return await loadFileMetadata(noteId, fileId);
 };
 
 /**
@@ -341,15 +412,38 @@ const getFilesList = async (
   pageSize = 50
 ): Promise<FileSearchResult> => {
   try {
-    const index = await loadFilesIndex();
-    let filteredFiles = [...index.files];
+    let allFiles: FileInfo[] = [];
+
+    if (filter.noteId) {
+      // 获取指定笔记的文件
+      const noteFiles = await loadNoteFileMetadata(
+        filter.noteId,
+        filter.includeDeleted
+      );
+      allFiles = noteFiles;
+    } else {
+      // 获取所有笔记的文件
+      const filesPath = getFilesDataPath();
+      if (existsSync(filesPath)) {
+        const noteDirs = await fs.readdir(filesPath);
+
+        for (const noteId of noteDirs) {
+          const noteFilesPath = join(filesPath, noteId);
+          const stats = await fs.stat(noteFilesPath);
+
+          if (stats.isDirectory()) {
+            const noteFiles = await loadNoteFileMetadata(
+              noteId,
+              filter.includeDeleted
+            );
+            allFiles.push(...noteFiles);
+          }
+        }
+      }
+    }
 
     // 应用筛选条件
-    if (filter.noteId) {
-      filteredFiles = filteredFiles.filter(
-        file => file.noteId === filter.noteId
-      );
-    }
+    let filteredFiles = allFiles;
 
     if (filter.fileType) {
       filteredFiles = filteredFiles.filter(
@@ -376,7 +470,7 @@ const getFilesList = async (
 
     if (filter.dateRange) {
       filteredFiles = filteredFiles.filter(file => {
-        const createdAt = new Date(file.createdAt);
+        const createdAt = file.createdAt;
         if (filter.dateRange!.from && createdAt < filter.dateRange!.from)
           return false;
         if (filter.dateRange!.to && createdAt > filter.dateRange!.to)
@@ -385,35 +479,19 @@ const getFilesList = async (
       });
     }
 
+    if (filter.tags && filter.tags.length > 0) {
+      filteredFiles = filteredFiles.filter(file => {
+        return file.tags && file.tags.some(tag => filter.tags!.includes(tag));
+      });
+    }
+
     // 分页
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
     const paginatedFiles = filteredFiles.slice(startIndex, endIndex);
 
-    // 转换为FileInfo格式
-    const files: FileInfo[] = await Promise.all(
-      paginatedFiles.map(async item => {
-        const filePath = join(getFilesDataPath(), item.relativePath);
-        return {
-          id: item.id,
-          name: item.name,
-          originalName: item.name,
-          extension: extname(item.name),
-          size: item.size,
-          mimeType: getMimeType(extname(item.name)),
-          relativePath: item.relativePath,
-          absolutePath: filePath,
-          noteId: item.noteId,
-          fileType: item.fileType,
-          createdAt: new Date(item.createdAt),
-          updatedAt: new Date(item.updatedAt),
-          hash: item.hash,
-        };
-      })
-    );
-
     return {
-      files,
+      files: paginatedFiles,
       total: filteredFiles.length,
       page,
       pageSize,
@@ -434,16 +512,30 @@ const getFilesList = async (
  */
 const getFileStats = async (noteId?: string): Promise<FileStats> => {
   try {
-    const index = await loadFilesIndex();
-    let files = index.files;
+    let allFiles: FileInfo[] = [];
 
     if (noteId) {
-      files = files.filter(file => file.noteId === noteId);
+      allFiles = await loadNoteFileMetadata(noteId, false);
+    } else {
+      const filesPath = getFilesDataPath();
+      if (existsSync(filesPath)) {
+        const noteDirs = await fs.readdir(filesPath);
+
+        for (const noteIdDir of noteDirs) {
+          const noteFilesPath = join(filesPath, noteIdDir);
+          const stats = await fs.stat(noteFilesPath);
+
+          if (stats.isDirectory()) {
+            const noteFiles = await loadNoteFileMetadata(noteIdDir, false);
+            allFiles.push(...noteFiles);
+          }
+        }
+      }
     }
 
     const stats: FileStats = {
-      totalCount: files.length,
-      totalSize: files.reduce((sum, file) => sum + file.size, 0),
+      totalCount: allFiles.length,
+      totalSize: allFiles.reduce((sum, file) => sum + file.size, 0),
       byType: {} as Record<FileUsageType, { count: number; size: number }>,
       byExtension: {},
     };
@@ -453,7 +545,7 @@ const getFileStats = async (noteId?: string): Promise<FileStats> => {
       stats.byType[type] = { count: 0, size: 0 };
     }
 
-    files.forEach(file => {
+    allFiles.forEach(file => {
       // 按类型
       if (!stats.byType[file.fileType]) {
         stats.byType[file.fileType] = { count: 0, size: 0 };
@@ -489,19 +581,17 @@ const deleteNoteFiles = async (
   noteId: string
 ): Promise<FileOperationResult> => {
   try {
-    const index = await loadFilesIndex();
-    const noteFiles = index.files.filter(file => file.noteId === noteId);
+    const noteFiles = await loadNoteFileMetadata(noteId, true);
 
     let deletedCount = 0;
-    for (const fileItem of noteFiles) {
-      const filePath = join(getFilesDataPath(), fileItem.relativePath);
-
-      if (existsSync(filePath)) {
-        await fs.unlink(filePath);
+    for (const fileInfo of noteFiles) {
+      if (!fileInfo.isDeleted) {
+        fileInfo.isDeleted = true;
+        fileInfo.deletedAt = new Date();
+        fileInfo.updatedAt = new Date();
+        await saveFileMetadata(fileInfo);
+        deletedCount++;
       }
-
-      await removeFileFromIndex(fileItem.id);
-      deletedCount++;
     }
 
     return {
@@ -510,6 +600,49 @@ const deleteNoteFiles = async (
     };
   } catch (error) {
     console.error('批量删除文件失败:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : '未知错误',
+      errorCode: FileErrorCode.UNKNOWN_ERROR,
+    };
+  }
+};
+
+/**
+ * 永久删除笔记的所有文件
+ */
+const permanentDeleteNoteFiles = async (
+  noteId: string
+): Promise<FileOperationResult> => {
+  try {
+    const noteFilesPath = getNoteFilesPath(noteId);
+
+    if (!existsSync(noteFilesPath)) {
+      return {
+        success: true,
+        affectedCount: 0,
+      };
+    }
+
+    const files = await fs.readdir(noteFilesPath);
+    let deletedCount = 0;
+
+    // 删除所有文件
+    for (const file of files) {
+      const filePath = join(noteFilesPath, file);
+      await fs.unlink(filePath);
+      deletedCount++;
+    }
+
+    // 删除目录
+    await fs.rmdir(noteFilesPath);
+
+    return {
+      success: true,
+      affectedCount: deletedCount,
+    };
+  } catch (error) {
+    console.error('永久删除笔记文件失败:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : '未知错误',
@@ -530,15 +663,37 @@ export function registerFileActionHandlers(): void {
     }
   );
 
-  // 删除文件
-  ipcMain.handle('file:delete', async (event, fileId: string) => {
-    return await deleteFile(fileId);
-  });
+  // 软删除文件
+  ipcMain.handle(
+    'file:delete',
+    async (event, fileId: string, noteId: string) => {
+      return await deleteFile(fileId, noteId);
+    }
+  );
+
+  // 永久删除文件
+  ipcMain.handle(
+    'file:permanentDelete',
+    async (event, fileId: string, noteId: string) => {
+      return await permanentDeleteFile(fileId, noteId);
+    }
+  );
+
+  // 恢复文件
+  ipcMain.handle(
+    'file:restore',
+    async (event, fileId: string, noteId: string) => {
+      return await restoreFile(fileId, noteId);
+    }
+  );
 
   // 获取文件信息
-  ipcMain.handle('file:getInfo', async (event, fileId: string) => {
-    return await getFileInfo(fileId);
-  });
+  ipcMain.handle(
+    'file:getInfo',
+    async (event, fileId: string, noteId: string) => {
+      return await getFileInfo(fileId, noteId);
+    }
+  );
 
   // 获取文件列表
   ipcMain.handle(
@@ -562,6 +717,14 @@ export function registerFileActionHandlers(): void {
   ipcMain.handle('file:deleteNoteFiles', async (event, noteId: string) => {
     return await deleteNoteFiles(noteId);
   });
+
+  // 永久删除笔记文件
+  ipcMain.handle(
+    'file:permanentDeleteNoteFiles',
+    async (event, noteId: string) => {
+      return await permanentDeleteNoteFiles(noteId);
+    }
+  );
 
   // 选择文件对话框
   ipcMain.handle(

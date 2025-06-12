@@ -31,8 +31,10 @@ export interface FileInfo {
   createdAt: Date;
   /** 文件最后修改时间 */
   updatedAt: Date;
-  /** 文件MD5哈希值 */
-  hash?: string;
+  /** 是否已软删除 */
+  isDeleted: boolean;
+  /** 软删除时间 */
+  deletedAt?: Date;
   /** 文件描述/备注 */
   description?: string;
   /** 文件标签 */
@@ -131,6 +133,8 @@ export interface FileFilterOptions {
   };
   /** 按标签筛选 */
   tags?: string[];
+  /** 是否包含已删除的文件 */
+  includeDeleted?: boolean;
 }
 
 /**
@@ -229,28 +233,4 @@ export interface ThumbnailConfig {
   quality: number;
   /** 输出格式 */
   format: 'jpeg' | 'png' | 'webp';
-}
-
-/**
- * 文件索引项
- */
-export interface FileIndexItem {
-  id: string;
-  name: string;
-  noteId: string;
-  fileType: FileUsageType;
-  size: number;
-  relativePath: string;
-  createdAt: string;
-  updatedAt: string;
-  hash?: string;
-}
-
-/**
- * 文件索引
- */
-export interface FileIndex {
-  version: string;
-  lastUpdated: string;
-  files: FileIndexItem[];
 }
