@@ -16,26 +16,13 @@ import {
   FileErrorCode,
 } from '../../../customTypes/models/file.types';
 
-/**
- * 获取文件存储根目录
- */
-const getFilesDataPath = () => {
-  const userDataPath = app.getPath('userData');
-  return join(userDataPath, 'files');
-};
-
-/**
- * 获取笔记文件目录
- */
-const getNoteFilesPath = (noteId: string): string => {
-  return join(getFilesDataPath(), noteId);
-};
+import { getNoteDirectoryPath } from './note-action-hook';
 
 /**
  * 获取文件元数据路径
  */
 const getFileMetadataPath = (noteId: string, fileId: string): string => {
-  return join(getNoteFilesPath(noteId), `${fileId}.json`);
+  return join(getNoteDirectoryPath(noteId), `${fileId}.json`);
 };
 
 /**
@@ -100,7 +87,7 @@ const saveFileMetadata = async (fileInfo: FileInfo): Promise<void> => {
     extension: fileInfo.extension,
     size: fileInfo.size,
     mimeType: fileInfo.mimeType,
-    relativePath: fileInfo.relativePath,
+    absolutePath: fileInfo.absolutePath,
     noteId: fileInfo.noteId,
     fileType: fileInfo.fileType,
     createdAt: fileInfo.createdAt.toISOString(),
@@ -108,7 +95,6 @@ const saveFileMetadata = async (fileInfo: FileInfo): Promise<void> => {
     isDeleted: fileInfo.isDeleted,
     deletedAt: fileInfo.deletedAt?.toISOString(),
     description: fileInfo.description,
-    tags: fileInfo.tags,
   };
 
   await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2), 'utf-8');
@@ -131,9 +117,6 @@ const loadFileMetadata = async (
     const metadataContent = await fs.readFile(metadataPath, 'utf-8');
     const metadata = JSON.parse(metadataContent);
 
-    const filesPath = getFilesDataPath();
-    const absolutePath = join(filesPath, metadata.relativePath);
-
     return {
       id: metadata.id,
       name: metadata.name,
@@ -141,8 +124,7 @@ const loadFileMetadata = async (
       extension: metadata.extension,
       size: metadata.size,
       mimeType: metadata.mimeType,
-      relativePath: metadata.relativePath,
-      absolutePath,
+      absolutePath: metadata.absolutePath,
       noteId: metadata.noteId,
       fileType: metadata.fileType,
       createdAt: new Date(metadata.createdAt),
@@ -150,7 +132,6 @@ const loadFileMetadata = async (
       isDeleted: metadata.isDeleted || false,
       deletedAt: metadata.deletedAt ? new Date(metadata.deletedAt) : undefined,
       description: metadata.description,
-      tags: metadata.tags,
     };
   } catch (error) {
     console.error('加载文件元数据失败:', error);
@@ -166,7 +147,7 @@ const loadNoteFileMetadata = async (
   includeDeleted = false
 ): Promise<FileInfo[]> => {
   try {
-    const noteFilesPath = getNoteFilesPath(noteId);
+    const noteFilesPath = getNoteDirectoryPath(noteId);
 
     if (!existsSync(noteFilesPath)) {
       return [];
@@ -197,44 +178,58 @@ const loadNoteFileMetadata = async (
  * 上传文件
  */
 const uploadFile = async (
-  sourcePath: string,
+  sourceData: string | Buffer,
+  fileName: string,
   options: FileUploadOptions
 ): Promise<FileUploadResult> => {
+  console.log(fileName, options, 11111);
   try {
-    // 检查源文件是否存在
-    if (!existsSync(sourcePath)) {
-      return {
-        success: false,
-        error: '源文件不存在',
-        errorCode: FileErrorCode.FILE_NOT_FOUND,
-      };
+    let fileContent: Buffer;
+    let fileSize: number;
+    let originalName: string;
+
+    // 处理不同类型的输入
+    if (typeof sourceData === 'string') {
+      // 如果是字符串，当作文件路径处理
+      if (!existsSync(sourceData)) {
+        return {
+          success: false,
+          error: '源文件不存在',
+          errorCode: FileErrorCode.FILE_NOT_FOUND,
+        };
+      }
+
+      const stats = statSync(sourceData);
+      fileContent = await fs.readFile(sourceData);
+      fileSize = stats.size;
+      originalName = basename(sourceData);
+    } else {
+      // 如果是 Buffer，直接使用
+      fileContent = sourceData;
+      fileSize = fileContent.length;
+      originalName = fileName;
     }
 
-    const stats = statSync(sourcePath);
-    const originalName = basename(sourcePath);
-    const extension = extname(sourcePath);
-    const fileName = generateUniqueFileName(originalName, options.noteId);
+    const extension = extname(originalName);
+    const uniqueFileName = generateUniqueFileName(originalName, options.noteId);
 
     // 创建目标目录结构
-    const noteFilesPath = getNoteFilesPath(options.noteId);
+    const noteFilesPath = getNoteDirectoryPath(options.noteId);
     await ensureDirectoryExists(noteFilesPath);
 
-    const targetPath = join(noteFilesPath, fileName);
-    const filesPath = getFilesDataPath();
-    const relativePath = relative(filesPath, targetPath);
+    const targetPath = join(noteFilesPath, uniqueFileName);
 
-    // 复制文件
-    await fs.copyFile(sourcePath, targetPath);
+    // 写入文件内容
+    await fs.writeFile(targetPath, fileContent);
 
     // 创建文件信息
     const fileInfo: FileInfo = {
       id: uuidv4(),
-      name: fileName,
+      name: uniqueFileName,
       originalName,
       extension,
-      size: stats.size,
+      size: fileSize,
       mimeType: getMimeType(extension),
-      relativePath,
       absolutePath: targetPath,
       noteId: options.noteId,
       fileType: options.fileType,
@@ -242,7 +237,6 @@ const uploadFile = async (
       updatedAt: new Date(),
       isDeleted: false,
       description: options.description,
-      tags: options.tags,
     };
 
     // 保存元数据
@@ -406,132 +400,109 @@ const getFileInfo = async (
 /**
  * 获取文件列表
  */
-const getFilesList = async (
-  filter: FileFilterOptions = {},
-  page = 1,
-  pageSize = 50
-): Promise<FileSearchResult> => {
-  try {
-    let allFiles: FileInfo[] = [];
+// const getFilesList = async (
+//   filter: FileFilterOptions = {},
+//   page = 1,
+//   pageSize = 50
+// ): Promise<FileSearchResult> => {
+//   try {
+//     let allFiles: FileInfo[] = [];
 
-    if (filter.noteId) {
-      // 获取指定笔记的文件
-      const noteFiles = await loadNoteFileMetadata(
-        filter.noteId,
-        filter.includeDeleted
-      );
-      allFiles = noteFiles;
-    } else {
-      // 获取所有笔记的文件
-      const filesPath = getFilesDataPath();
-      if (existsSync(filesPath)) {
-        const noteDirs = await fs.readdir(filesPath);
+//     if (filter.noteId) {
+//       // 获取指定笔记的文件
+//       const noteFiles = await loadNoteFileMetadata(
+//         filter.noteId,
+//         filter.includeDeleted
+//       );
+//       allFiles = noteFiles;
+//     } else {
+//       // 获取所有笔记的文件
+//       const filesPath = getFilesDataPath();
+//       if (existsSync(filesPath)) {
+//         const noteDirs = await fs.readdir(filesPath);
 
-        for (const noteId of noteDirs) {
-          const noteFilesPath = join(filesPath, noteId);
-          const stats = await fs.stat(noteFilesPath);
+//         for (const noteId of noteDirs) {
+//           const noteFilesPath = join(filesPath, noteId);
+//           const stats = await fs.stat(noteFilesPath);
 
-          if (stats.isDirectory()) {
-            const noteFiles = await loadNoteFileMetadata(
-              noteId,
-              filter.includeDeleted
-            );
-            allFiles.push(...noteFiles);
-          }
-        }
-      }
-    }
+//           if (stats.isDirectory()) {
+//             const noteFiles = await loadNoteFileMetadata(
+//               noteId,
+//               filter.includeDeleted
+//             );
+//             allFiles.push(...noteFiles);
+//           }
+//         }
+//       }
+//     }
 
-    // 应用筛选条件
-    let filteredFiles = allFiles;
+//     // 应用筛选条件
+//     let filteredFiles = allFiles;
 
-    if (filter.fileType) {
-      filteredFiles = filteredFiles.filter(
-        file => file.fileType === filter.fileType
-      );
-    }
+//     if (filter.fileType) {
+//       filteredFiles = filteredFiles.filter(
+//         file => file.fileType === filter.fileType
+//       );
+//     }
 
-    if (filter.extensions && filter.extensions.length > 0) {
-      filteredFiles = filteredFiles.filter(file => {
-        const ext = extname(file.name).toLowerCase();
-        return filter.extensions!.includes(ext);
-      });
-    }
+//     if (filter.extensions && filter.extensions.length > 0) {
+//       filteredFiles = filteredFiles.filter(file => {
+//         const ext = extname(file.name).toLowerCase();
+//         return filter.extensions!.includes(ext);
+//       });
+//     }
 
-    if (filter.sizeRange) {
-      filteredFiles = filteredFiles.filter(file => {
-        if (filter.sizeRange!.min && file.size < filter.sizeRange!.min)
-          return false;
-        if (filter.sizeRange!.max && file.size > filter.sizeRange!.max)
-          return false;
-        return true;
-      });
-    }
+//     if (filter.sizeRange) {
+//       filteredFiles = filteredFiles.filter(file => {
+//         if (filter.sizeRange!.min && file.size < filter.sizeRange!.min)
+//           return false;
+//         if (filter.sizeRange!.max && file.size > filter.sizeRange!.max)
+//           return false;
+//         return true;
+//       });
+//     }
 
-    if (filter.dateRange) {
-      filteredFiles = filteredFiles.filter(file => {
-        const createdAt = file.createdAt;
-        if (filter.dateRange!.from && createdAt < filter.dateRange!.from)
-          return false;
-        if (filter.dateRange!.to && createdAt > filter.dateRange!.to)
-          return false;
-        return true;
-      });
-    }
+//     if (filter.dateRange) {
+//       filteredFiles = filteredFiles.filter(file => {
+//         const createdAt = file.createdAt;
+//         if (filter.dateRange!.from && createdAt < filter.dateRange!.from)
+//           return false;
+//         if (filter.dateRange!.to && createdAt > filter.dateRange!.to)
+//           return false;
+//         return true;
+//       });
+//     }
 
-    if (filter.tags && filter.tags.length > 0) {
-      filteredFiles = filteredFiles.filter(file => {
-        return file.tags && file.tags.some(tag => filter.tags!.includes(tag));
-      });
-    }
+//     // 分页
+//     const startIndex = (page - 1) * pageSize;
+//     const endIndex = startIndex + pageSize;
+//     const paginatedFiles = filteredFiles.slice(startIndex, endIndex);
 
-    // 分页
-    const startIndex = (page - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-    const paginatedFiles = filteredFiles.slice(startIndex, endIndex);
-
-    return {
-      files: paginatedFiles,
-      total: filteredFiles.length,
-      page,
-      pageSize,
-    };
-  } catch (error) {
-    console.error('获取文件列表失败:', error);
-    return {
-      files: [],
-      total: 0,
-      page,
-      pageSize,
-    };
-  }
-};
+//     return {
+//       files: paginatedFiles,
+//       total: filteredFiles.length,
+//       page,
+//       pageSize,
+//     };
+//   } catch (error) {
+//     console.error('获取文件列表失败:', error);
+//     return {
+//       files: [],
+//       total: 0,
+//       page,
+//       pageSize,
+//     };
+//   }
+// };
 
 /**
  * 获取文件统计信息
  */
-const getFileStats = async (noteId?: string): Promise<FileStats> => {
+const getFileStats = async (noteId: string): Promise<FileStats> => {
   try {
     let allFiles: FileInfo[] = [];
 
-    if (noteId) {
-      allFiles = await loadNoteFileMetadata(noteId, false);
-    } else {
-      const filesPath = getFilesDataPath();
-      if (existsSync(filesPath)) {
-        const noteDirs = await fs.readdir(filesPath);
-
-        for (const noteIdDir of noteDirs) {
-          const noteFilesPath = join(filesPath, noteIdDir);
-          const stats = await fs.stat(noteFilesPath);
-
-          if (stats.isDirectory()) {
-            const noteFiles = await loadNoteFileMetadata(noteIdDir, false);
-            allFiles.push(...noteFiles);
-          }
-        }
-      }
-    }
+    allFiles = await loadNoteFileMetadata(noteId, false);
 
     const stats: FileStats = {
       totalCount: allFiles.length,
@@ -615,7 +586,7 @@ const permanentDeleteNoteFiles = async (
   noteId: string
 ): Promise<FileOperationResult> => {
   try {
-    const noteFilesPath = getNoteFilesPath(noteId);
+    const noteFilesPath = getNoteDirectoryPath(noteId);
 
     if (!existsSync(noteFilesPath)) {
       return {
@@ -658,8 +629,13 @@ export function registerFileActionHandlers(): void {
   // 上传文件
   ipcMain.handle(
     'file:upload',
-    async (event, sourcePath: string, options: FileUploadOptions) => {
-      return await uploadFile(sourcePath, options);
+    async (
+      event,
+      sourcePath: string | Buffer,
+      fileName: string,
+      options: FileUploadOptions
+    ) => {
+      return await uploadFile(sourcePath, fileName, options);
     }
   );
 
@@ -704,7 +680,7 @@ export function registerFileActionHandlers(): void {
       page: number,
       pageSize: number
     ) => {
-      return await getFilesList(filter, page, pageSize);
+      return await loadNoteFileMetadata(filter.noteId, filter.includeDeleted);
     }
   );
 

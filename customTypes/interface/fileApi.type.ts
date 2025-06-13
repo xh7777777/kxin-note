@@ -19,7 +19,8 @@ export interface FileAPI {
    * @returns Promise<FileUploadResult>
    */
   uploadFile: (
-    sourcePath: string,
+    sourcePath: string | Buffer,
+    fileName: string,
     options: FileUploadOptions
   ) => Promise<FileUploadResult>;
 

@@ -19,8 +19,6 @@ export interface FileInfo {
   size: number;
   /** 文件MIME类型 */
   mimeType: string;
-  /** 文件在文件系统中的相对路径 */
-  relativePath: string;
   /** 文件的绝对路径 */
   absolutePath: string;
   /** 关联的笔记ID */
@@ -57,6 +55,8 @@ export enum FileUsageType {
   VIDEO = 'video',
   /** 其他类型 */
   OTHER = 'other',
+  /** PDF文件 */
+  PDF = 'pdf',
 }
 
 /**
@@ -73,8 +73,6 @@ export interface FileUploadOptions {
   imageQuality?: number;
   /** 文件描述 */
   description?: string;
-  /** 文件标签 */
-  tags?: string[];
 }
 
 /**

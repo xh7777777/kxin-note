@@ -26,6 +26,18 @@ jest.mock('fs', () => ({
 }));
 
 // upload file in a note
+// it should create a file in the note directory
+// it should create a file metadata in the note directory called [fileId].json
+
+describe('File Hook', () => {
+  describe('upload file', () => {
+    it('should create a file in the note directory', () => {
+      const fileId = 'test-file-id';
+      const noteId = 'test-note-id';
+      const filePath = 'test-file-path';
+    });
+  });
+});
 
 // get file info
 

@@ -77,8 +77,8 @@ contextBridge.exposeInMainWorld('noteAPI', {
 // 暴露文件操作API
 contextBridge.exposeInMainWorld('fileAPI', {
   // 上传文件
-  uploadFile: (sourcePath: string, options: any) =>
-    ipcRenderer.invoke('file:upload', sourcePath, options),
+  uploadFile: (sourcePath: Buffer, fileName: string, options: any) =>
+    ipcRenderer.invoke('file:upload', sourcePath, fileName, options),
 
   // 删除文件
   deleteFile: (fileId: string) => ipcRenderer.invoke('file:delete', fileId),

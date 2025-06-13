@@ -1,16 +1,18 @@
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import type {
   NoteIndexItem,
   NoteContent,
   NotePage,
 } from '@customTypes/models/note.types';
+import { useNoteStore } from '@renderer/store/modules/noteStore';
 
 function useNotes() {
-  const activeNoteId = ref<string | null>(null);
   const notePages = ref<NoteIndexItem[]>([]);
   const noteLoading = ref(false);
   const noteError = ref<string | null>(null);
   const selectedNoteContent = ref<NoteContent | null>(null);
+  const noteStore = useNoteStore();
+  const activeNoteId = computed(() => noteStore.getCurrentNoteId);
 
   const createNote = async () => {
     const res = await window.noteAPI.createNote();
@@ -46,9 +48,8 @@ function useNotes() {
     if (activeNoteId.value === id) {
       return false;
     }
-    activeNoteId.value = id;
+    noteStore.setCurrentNoteId(id);
     const note = await getNoteById(id);
-    console.log('selectNote', note);
     if (note) {
       selectedNoteContent.value = note.content;
     }
