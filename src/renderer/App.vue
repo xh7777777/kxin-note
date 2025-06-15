@@ -1,5 +1,5 @@
 <template>
-  <title-bar />
+  <!-- <title-bar /> -->
   <div class="main">
     <router-view v-slot="{ Component }">
       <component :is="Component" />
