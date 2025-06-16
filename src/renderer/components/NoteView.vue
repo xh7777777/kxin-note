@@ -1,6 +1,8 @@
 <template>
   <!-- <div ref="editorContainer" class="editor-container"></div> -->
-  <div class="w-full h-full flex justify-center items-center flex-col relative">
+  <div
+    class="w-full h-full flex justify-center items-center flex-col relative bg-white overflow-auto p-8 scrollbar-hide"
+  >
     <!-- 操作区 -->
     <div
       class="w-full h-16 bg-white border-b border-gray-200 flex justify-end items-center px-4 gap-2"

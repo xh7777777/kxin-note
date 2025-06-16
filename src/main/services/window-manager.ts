@@ -19,13 +19,16 @@ class MainInit {
   // 主窗口函数
   createMainWindow() {
     this.mainWindow = new BrowserWindow({
-      titleBarStyle: config.IsUseSysTitle ? 'default' : 'hidden',
+      titleBarStyle: config.IsUseSysTitle ? 'default' : 'hiddenInset',
       height: 800,
       useContentSize: true,
-      width: 1700,
-      minWidth: 1366,
+      width: 1200,
+      minWidth: 800,
       show: false,
       frame: config.IsUseSysTitle,
+      vibrancy: 'sidebar',
+      visualEffectState: 'active',
+      transparent: true,
       webPreferences: {
         sandbox: false,
         webSecurity: false,

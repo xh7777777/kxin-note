@@ -82,3 +82,12 @@ a:hover {
 .app-container {
   padding: 20px;
 }
+
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
