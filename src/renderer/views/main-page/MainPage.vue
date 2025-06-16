@@ -49,11 +49,22 @@
               从左侧选择笔记本和笔记，或创建一个新笔记
             </p>
             <p class="text-xs text-gray-400 mt-4">
-              按
+              <kbd class="px-1.5 py-0.5 bg-gray-100 rounded text-xs">
+                Ctrl+/
+              </kbd>
+              显示/隐藏侧边栏
+            </p>
+            <p class="text-xs text-gray-400 mt-4">
               <kbd class="px-1.5 py-0.5 bg-gray-100 rounded text-xs">
                 Ctrl+L
               </kbd>
               打开 AI 助手
+            </p>
+            <p class="text-xs text-gray-400 mt-4">
+              <kbd class="px-1.5 py-0.5 bg-gray-100 rounded text-xs">
+                Ctrl+K
+              </kbd>
+              打开 AI 浮窗
             </p>
           </div>
         </div>
