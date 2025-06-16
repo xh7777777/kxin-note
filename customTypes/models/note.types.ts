@@ -372,6 +372,7 @@ export interface NoteIndexItem {
   level: number;
   isFavorite?: boolean;
   isArchived?: boolean;
+  isInTrash?: boolean;
 }
 
 /**

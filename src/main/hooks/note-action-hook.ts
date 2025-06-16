@@ -122,6 +122,7 @@ const updateNoteInIndex = async (note: NotePage): Promise<void> => {
     level: note.level,
     isFavorite: note.isFavorite,
     isArchived: note.isArchived,
+    isInTrash: note.isInTrash,
   };
 
   // 查找是否已存在
@@ -152,6 +153,20 @@ const removeNoteFromIndex = async (noteId: string): Promise<void> => {
   await saveNotesIndex(index);
 };
 
+/**
+ * 修改索引列表中笔记id的字段
+ */
+const updateNoteInIndexById = async (
+  noteId: string,
+  updates: Partial<NoteIndexItem>
+): Promise<void> => {
+  const index = await loadNotesIndex();
+  const note = index.notes.find(item => item.id === noteId);
+  if (note) {
+    Object.assign(note, updates);
+    await saveNotesIndex(index);
+  }
+};
 /**
  * 重建笔记索引
  */
@@ -325,9 +340,14 @@ const loadNoteById = async (noteId: string): Promise<NotePage> => {
 /**
  * 获取所有笔记（从索引中读取）
  */
-const getAllNotes = async (): Promise<NoteIndexItem[]> => {
+const getAllNotes = async (isInTrash?: boolean): Promise<NoteIndexItem[]> => {
   try {
-    const index = await loadNotesIndex();
+    let index = await loadNotesIndex();
+    if (isInTrash) {
+      index.notes = index.notes.filter(note => note.isInTrash);
+    } else {
+      index.notes = index.notes.filter(note => !note.isInTrash);
+    }
     return index.notes.sort(
       (a, b) =>
         new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
@@ -424,6 +444,10 @@ const moveNoteToTrash = async (noteId: string): Promise<NotePage> => {
         status: PageStatus.DELETED,
         updatedAt: new Date(),
       },
+    });
+    // 更新索引
+    await updateNoteInIndexById(noteId, {
+      isInTrash: true,
     });
 
     console.log(`Note ${noteId} moved to trash`);

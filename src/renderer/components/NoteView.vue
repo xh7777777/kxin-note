@@ -99,34 +99,18 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted, watch, onUnmounted, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useNotes } from '../hooks/useNotes';
 import { useEditorJs } from '../hooks/useEdjtorJs';
 import type { NoteContent } from '@customTypes/models/note.types';
 import {
-  Trash2,
-  Download,
   MoreHorizontal,
-  FileText,
-  Globe,
-  FileDown,
   Link,
-  Plus,
   ArrowRight,
   Trash,
-  Type,
-  Maximize,
-  Settings,
-  Lock,
   Edit,
   Languages,
   Upload,
-  RefreshCw,
-  BarChart3,
-  History,
-  Bell,
-  Star,
-  ExternalLink,
 } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -136,6 +120,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update-note-item', noteId: string, key: string, value: any): void;
   (e: 'delete-note', noteId: string): void;
+  (e: 'move-to-trash', noteId: string): void;
 }>();
 
 const { getNoteById, updateContent } = useNotes();
@@ -181,8 +166,13 @@ const handleExport = (format: 'markdown' | 'html' | 'pdf') => {
 
 // 处理菜单操作
 const handleMenuAction = (action: string) => {
-  console.log(`执行操作: ${action}`);
-  // TODO: 实现具体的菜单操作逻辑
+  switch (action) {
+    case 'move-to-trash':
+      emit('move-to-trash', props.noteId);
+      break;
+    default:
+      break;
+  }
   showMoreActions.value = false;
 };
 

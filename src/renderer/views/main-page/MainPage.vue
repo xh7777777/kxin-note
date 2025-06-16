@@ -75,6 +75,7 @@
           ref="noteViewRef"
           :key="activeNoteId"
           @update-note-item="handleUpdateNoteItem"
+          @move-to-trash="handleMoveToTrash"
         />
       </div>
     </div>
@@ -135,9 +136,11 @@ const {
   getAllNotes,
   selectNote,
   updateNote,
+  moveToTrash,
+  cancelSelectNote,
 } = useNotes();
 
-const { warning, info } = useMessage();
+const { warning, info, success } = useMessage();
 
 // 响应式数据
 const searchQuery = ref('');
@@ -213,6 +216,16 @@ const handleUpdateNoteItem = async (
     }
   } else {
     console.error('handleUpdateNoteInfo11', noteId, key, value);
+  }
+};
+
+const handleMoveToTrash = async (noteId: string) => {
+  const res = await moveToTrash(noteId);
+  console.log('handleMoveToTrash', res);
+  if (res) {
+    await getAllNotes();
+    cancelSelectNote();
+    success('删除成功', '笔记已移动到垃圾桶');
   }
 };
 

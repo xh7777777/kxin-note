@@ -56,6 +56,11 @@ function useNotes() {
     return true;
   };
 
+  const cancelSelectNote = () => {
+    noteStore.setCurrentNoteId('');
+    selectedNoteContent.value = null;
+  };
+
   const updateNote = async (id: string, updates: Partial<NotePage>) => {
     const res = await window.noteAPI.updateNote(id, updates);
     if (res.success) {
@@ -88,6 +93,14 @@ function useNotes() {
     return null;
   };
 
+  const moveToTrash = async (id: string) => {
+    const res = await window.noteAPI.moveToTrash(id);
+    if (res.success) {
+      return res.data;
+    }
+    return null;
+  };
+
   return {
     notePages,
     activeNoteId,
@@ -99,6 +112,8 @@ function useNotes() {
     updateTitle,
     updateIcon,
     updateContent,
+    moveToTrash,
+    cancelSelectNote,
   };
 }
 
