@@ -1,60 +1,10 @@
 <template>
   <!-- <div ref="editorContainer" class="editor-container"></div> -->
   <div
-    class="w-full h-full flex justify-center items-center flex-col relative bg-white overflow-auto p-8 scrollbar-hide"
+    class="w-full h-full flex justify-center items-center flex-col relative bg-white overflow-auto p-8 scrollbar-hide flex-1"
   >
     <!-- 操作区 -->
-    <div
-      class="w-full h-16 bg-white border-b border-gray-200 flex justify-end items-center px-4 gap-2"
-    >
-      <!-- 删除按钮 -->
-      <button
-        @click="handleDelete"
-        class="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200 group"
-        title="删除笔记"
-      >
-        <Trash2 class="w-5 h-5 text-gray-600 group-hover:text-red-500" />
-      </button>
-
-      <!-- 导出按钮 -->
-      <div class="relative" ref="exportDropdownRef">
-        <button
-          @click="toggleExportDropdown"
-          class="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200 group"
-          title="导出笔记"
-        >
-          <Download class="w-5 h-5 text-gray-600 group-hover:text-blue-500" />
-        </button>
-
-        <!-- 导出下拉菜单 -->
-        <div
-          v-if="showExportDropdown"
-          class="absolute right-0 top-full mt-1 w-40 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50"
-        >
-          <button
-            @click="handleExport('markdown')"
-            class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2"
-          >
-            <FileText class="w-4 h-4" />
-            导出 Markdown
-          </button>
-          <button
-            @click="handleExport('html')"
-            class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2"
-          >
-            <Globe class="w-4 h-4" />
-            导出 HTML
-          </button>
-          <button
-            @click="handleExport('pdf')"
-            class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2"
-          >
-            <FileDown class="w-4 h-4" />
-            导出 PDF
-          </button>
-        </div>
-      </div>
-
+    <div class="w-full h-16 bg-white flex justify-end items-center px-4 gap-2">
       <!-- 更多操作按钮 -->
       <div class="relative" ref="moreActionsRef">
         <button
@@ -126,10 +76,9 @@
       </div>
     </div>
     <!-- 封面图预留区 -->
-    <div class="w-full h-64 bg-blue-500"></div>
-    <div class="max-w-3xl w-3xl h-full flex flex-col">
+    <div class="max-w-3xl w-full h-full flex flex-col pt-12">
       <!-- 标题区域 -->
-      <div class="w-full h-12 bg-red-200" v-if="noteInfo">
+      <div class="w-full h-14 border-b border-gray-200" v-if="noteInfo">
         <input
           type="text"
           v-model="noteInfo.title"
@@ -140,7 +89,7 @@
       </div>
       <!-- 编辑器区域 -->
       <div
-        class="max-w-3xl w-3xl min-h-[100vh] bg-blue-200 flex-1"
+        class="max-w-3xl min-h-[100vh] flex-1"
         ref="containerRef"
         id="editorjs"
       ></div>
