@@ -5,6 +5,7 @@ import Delimiter from '@editorjs/delimiter';
 import EditorjsList from '@editorjs/list';
 import AttachesTool from '@editorjs/attaches';
 import { useFile } from '@renderer/hooks/useFile';
+import CodeTool from '@editorjs/code';
 
 const { uploadFile } = useFile();
 
@@ -62,6 +63,10 @@ export const editorBaseConfig = {
           },
         },
       },
+    },
+    code: {
+      class: CodeTool,
+      inlineToolbar: true,
     },
   },
 };
