@@ -1,15 +1,13 @@
 import { ipcMain, dialog } from 'electron';
 import { promises as fs, existsSync, statSync } from 'fs';
-import { join, dirname, extname, basename, relative } from 'path';
+import { join, dirname, extname, basename } from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { app } from 'electron';
 
 import {
   FileInfo,
   FileUploadOptions,
   FileUploadResult,
   FileFilterOptions,
-  FileSearchResult,
   FileStats,
   FileOperationResult,
   FileUsageType,

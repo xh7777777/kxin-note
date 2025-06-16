@@ -40,12 +40,58 @@ export default [
             'prettier/prettier': 'error',
             'no-console': 'warn',
             'no-debugger': 'error',
+            'no-undef': 'off', // TypeScript 处理未定义变量检查
         },
     },
 
-    // Vue 文件配置
+    // Vue 文件配置（渲染进程）
+    {
+        files: ['src/renderer/**/*.vue'],
+        languageOptions: {
+            parser: vueParser,
+            parserOptions: {
+                parser: tsparser,
+                ecmaVersion: 'latest',
+                sourceType: 'module',
+                extraFileExtensions: ['.vue'],
+            },
+            globals: {
+                // 浏览器环境全局变量
+                window: 'readonly',
+                document: 'readonly',
+                navigator: 'readonly',
+                console: 'readonly',
+                setTimeout: 'readonly',
+                clearTimeout: 'readonly',
+                setInterval: 'readonly',
+                clearInterval: 'readonly',
+                localStorage: 'readonly',
+                sessionStorage: 'readonly',
+                HTMLElement: 'readonly',
+                Event: 'readonly',
+                KeyboardEvent: 'readonly',
+                MouseEvent: 'readonly',
+                globalThis: 'readonly',
+            },
+        },
+        plugins: {
+            vue: vuePlugin,
+            '@typescript-eslint': tseslint,
+            prettier,
+        },
+        rules: {
+            'prettier/prettier': 'error',
+            'vue/multi-word-component-names': 'off',
+            'vue/require-default-prop': 'off',
+            'no-console': 'warn',
+            'no-undef': 'error',
+        },
+    },
+
+    // 其他 Vue 文件配置
     {
         files: ['**/*.vue'],
+        excludeFiles: ['src/renderer/**/*.vue'],
         languageOptions: {
             parser: vueParser,
             parserOptions: {
@@ -64,6 +110,47 @@ export default [
             'prettier/prettier': 'error',
             'vue/multi-word-component-names': 'off',
             'vue/require-default-prop': 'off',
+            'no-undef': 'off',
+        },
+    },
+
+    // 渲染进程 TypeScript 文件配置
+    {
+        files: ['src/renderer/**/*.ts', 'src/renderer/**/*.tsx'],
+        languageOptions: {
+            parser: tsparser,
+            parserOptions: {
+                ecmaVersion: 'latest',
+                sourceType: 'module',
+            },
+            globals: {
+                // 浏览器环境全局变量
+                window: 'readonly',
+                document: 'readonly',
+                navigator: 'readonly',
+                console: 'readonly',
+                setTimeout: 'readonly',
+                clearTimeout: 'readonly',
+                setInterval: 'readonly',
+                clearInterval: 'readonly',
+                localStorage: 'readonly',
+                sessionStorage: 'readonly',
+                HTMLElement: 'readonly',
+                Event: 'readonly',
+                KeyboardEvent: 'readonly',
+                MouseEvent: 'readonly',
+                globalThis: 'readonly',
+            },
+        },
+        plugins: {
+            '@typescript-eslint': tseslint,
+            prettier,
+        },
+        rules: {
+            'prettier/prettier': 'error',
+            'no-console': 'warn',
+            'no-debugger': 'error',
+            'no-undef': 'error',
         },
     },
 
@@ -77,11 +164,20 @@ export default [
                 sourceType: 'module',
             },
             globals: {
+                // Node.js 环境全局变量
                 __dirname: 'readonly',
                 __filename: 'readonly',
                 Buffer: 'readonly',
                 process: 'readonly',
                 global: 'readonly',
+                console: 'readonly',
+                setTimeout: 'readonly',
+                clearTimeout: 'readonly',
+                setInterval: 'readonly',
+                clearInterval: 'readonly',
+                require: 'readonly',
+                module: 'readonly',
+                exports: 'readonly',
             },
         },
         plugins: {
@@ -91,6 +187,7 @@ export default [
         rules: {
             'prettier/prettier': 'error',
             'no-console': 'off', // 主进程允许 console
+            'no-undef': 'error',
         },
     },
 
@@ -104,6 +201,21 @@ export default [
                 sourceType: 'module',
             },
             globals: {
+                // Node.js 测试环境全局变量
+                __dirname: 'readonly',
+                __filename: 'readonly',
+                Buffer: 'readonly',
+                process: 'readonly',
+                global: 'readonly',
+                console: 'readonly',
+                setTimeout: 'readonly',
+                clearTimeout: 'readonly',
+                setInterval: 'readonly',
+                clearInterval: 'readonly',
+                require: 'readonly',
+                module: 'readonly',
+                exports: 'readonly',
+                // Jest/测试框架全局变量
                 describe: 'readonly',
                 it: 'readonly',
                 expect: 'readonly',
@@ -121,6 +233,7 @@ export default [
         rules: {
             'prettier/prettier': 'error',
             'no-console': 'off', // 测试中允许 console
+            'no-undef': 'error',
         },
     },
 ]; 
