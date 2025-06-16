@@ -83,7 +83,7 @@
           type="text"
           v-model="noteInfo.title"
           placeholder="请输入笔记标题"
-          class="w-full h-full bg-transparent outline-none text-2xl font-bold pl-2"
+          class="w-full h-full bg-transparent outline-none text-4xl font-bold pl-2"
           @blur="handleUpdateNoteItem(noteInfo.id, 'title', noteInfo.title)"
         />
       </div>
