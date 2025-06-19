@@ -6,6 +6,7 @@ import EditorjsList from '@editorjs/list';
 import AttachesTool from '@editorjs/attaches';
 import { useFile } from '@renderer/hooks/useFile';
 import CodeTool from '@editorjs/code';
+import InlineCode from '@editorjs/inline-code';
 
 const { uploadFile } = useFile();
 
@@ -66,7 +67,10 @@ export const editorBaseConfig = {
     },
     code: {
       class: CodeTool,
-      inlineToolbar: true,
+    },
+    inlineCode: {
+      class: InlineCode,
+      shortcut: 'CMD+SHIFT+M',
     },
   },
 };
