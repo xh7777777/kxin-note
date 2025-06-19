@@ -8,6 +8,7 @@ import { useProcessException } from '@main/hooks/exception-hook';
 import { useMenu } from '@main/hooks/menu-hook';
 import { registerNoteActionHandlers } from './hooks/note-action-hook';
 import { registerFileActionHandlers } from './hooks/file-hook';
+import { startServer } from './server';
 
 function onAppReady() {
   const { disableF12 } = useDisableButton();
@@ -18,6 +19,7 @@ function onAppReady() {
   renderProcessGone();
   defaultIpc();
   creactMenu();
+  startServer();
 
   // 注册笔记操作handlers
   registerNoteActionHandlers();

@@ -101,7 +101,7 @@ class MainInit {
     // 延迟两秒可以根据情况后续调快，= =，就相当于个，sleep吧，就那种。 = =。。。
     setTimeout(() => {
       this.createMainWindow();
-    }, 1500);
+    }, 0);
   }
   // 初始化窗口函数
   initWindow() {
