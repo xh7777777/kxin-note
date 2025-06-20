@@ -2,13 +2,12 @@ import koa from 'koa';
 import router from './router';
 import koaCors from 'koa-cors';
 import koaBody from 'koa-body';
-import koaBouncer from 'koa-bouncer';
+// import koaBouncer from 'koa-bouncer';
 
 const app = new koa();
 
 app.use(koaCors());
 app.use(koaBody());
-app.use(koaBouncer());
 app.use(router.routes());
 app.use(router.allowedMethods());
 
