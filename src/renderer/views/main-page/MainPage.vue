@@ -3,8 +3,8 @@
     <!-- 左侧边栏组件 -->
     <SideBar
       :search-query="searchQuery"
-      :note-pages="notePages"
-      :active-note-id="activeNoteId"
+      :note-pages="[]"
+      :active-note-id="''"
       @add-note="addNote"
       @select-note="handleSelectNote"
       @toggle-dark-mode="toggleDarkMode"
@@ -23,7 +23,7 @@
     >
       <div
         class="w-full h-full rounded-lg shadow-md overflow-hidden flex justify-center items-center bg-white"
-        v-if="!activeNoteId"
+        v-if="false"
       >
         <!-- 没有选中笔记时显示 -->
         <div class="text-center max-w-xs">
@@ -69,15 +69,10 @@
           </div>
         </div>
       </div>
-      <div class="h-full w-full rounded-lg shadow-md overflow-hidden" v-else>
-        <NoteView
-          :note-id="activeNoteId"
-          ref="noteViewRef"
-          :key="activeNoteId"
-          @update-note-item="handleUpdateNoteItem"
-          @move-to-trash="handleMoveToTrash"
-        />
-      </div>
+      <div
+        class="h-full w-full rounded-lg shadow-md overflow-hidden relative"
+        v-else
+      ></div>
     </div>
 
     <!-- 右侧 AI 聊天区域 -->
@@ -124,21 +119,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import SideBar from '../../components/SideBar.vue';
-import NoteView from '../../components/NoteView.vue';
+import MuyaNoteView from '../../components/MuyaNoteView.vue';
 import AIChatView from '../../components/AIChatView.vue';
 import PopMessage from '../../components/PopMessage.vue';
-import { useNotes } from '../../hooks/useNotes';
 import { useMessage } from '../../hooks/useMessage';
-const {
-  notePages,
-  activeNoteId,
-  createNote,
-  getAllNotes,
-  selectNote,
-  updateNote,
-  moveToTrash,
-  cancelSelectNote,
-} = useNotes();
 
 const { warning, info, success } = useMessage();
 
@@ -146,9 +130,6 @@ const { warning, info, success } = useMessage();
 const searchQuery = ref('');
 const sidebarCollapsed = ref(false);
 const chatVisible = ref(false);
-
-// 笔记视图组件引用
-const noteViewRef = ref<InstanceType<typeof NoteView> | null>(null);
 
 // 快捷键处理
 const handleKeyDown = (event: any) => {
@@ -164,8 +145,6 @@ const toggleChat = () => {
 };
 
 onMounted(async () => {
-  await getAllNotes();
-
   // 添加全局键盘事件监听
   document.addEventListener('keydown', handleKeyDown);
 });
@@ -176,26 +155,11 @@ onUnmounted(() => {
 });
 
 const addNote = async () => {
-  try {
-    const note = await createNote();
-    if (note && note.id) {
-      // 笔记创建成功
-      handleSelectNote(note.id);
-    } else {
-      throw new Error('创建失败');
-    }
-  } catch (error) {
-    console.error('添加新笔记失败', error);
-    // 使用全局消息提示
-    info('创建失败', '无法创建新笔记，请重试');
-  }
+  console.log('addNote');
 };
 
 const handleSelectNote = async (noteId: string) => {
-  const res = await selectNote(noteId);
-  if (res && noteViewRef.value) {
-    await noteViewRef.value.changeNotePage(noteId);
-  }
+  console.log('handleSelectNote', noteId);
 };
 
 const handleSidebarCollapse = (collapsed: boolean) => {
@@ -206,27 +170,10 @@ const handleUpdateNoteItem = async (
   noteId: string,
   key: string,
   value: any
-) => {
-  // console.log('handleUpdateNoteInfo', noteId, updates);
-  const res = await updateNote(noteId, { [key]: value });
-  if (res) {
-    console.log('handleUpdateNoteInfo', noteId, key, value);
-    if (key == 'title' || key == 'icon') {
-      await getAllNotes();
-    }
-  } else {
-    console.error('handleUpdateNoteInfo11', noteId, key, value);
-  }
-};
+) => {};
 
 const handleMoveToTrash = async (noteId: string) => {
-  const res = await moveToTrash(noteId);
-  console.log('handleMoveToTrash', res);
-  if (res) {
-    await getAllNotes();
-    cancelSelectNote();
-    success('删除成功', '笔记已移动到垃圾桶');
-  }
+  console.log('handleMoveToTrash', noteId);
 };
 
 const toggleDarkMode = () => {

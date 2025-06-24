@@ -1,6 +1,6 @@
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
-
+import '@muyajs/core/lib/style.css';
 import './styles/tailwind.css';
 import './styles/index.scss';
 import './permission';
