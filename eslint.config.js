@@ -40,6 +40,7 @@ export default [
             'prettier/prettier': 'error',
             'no-console': 'warn',
             'no-debugger': 'error',
+            'no-unused-vars': 'off',
             'no-undef': 'off', // TypeScript 处理未定义变量检查
         },
     },

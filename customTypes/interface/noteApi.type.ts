@@ -1,99 +1,224 @@
-import type { NotePage, NoteIndexItem } from '../models/note.types';
+import type { INote, INoteMetadata, INoteStatus } from '../models/note.types';
+
+/**
+ * 笔记API响应结果
+ */
+export interface NoteAPIResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+}
+
+/**
+ * 创建笔记的请求参数
+ */
+export interface CreateNoteRequest {
+  title?: string;
+  content?: string;
+  summary?: string;
+  icon?: string;
+  cover?: string;
+  tags?: string[];
+}
+
+/**
+ * 更新笔记的请求参数
+ */
+export interface UpdateNoteRequest {
+  id: string;
+  metadata?: Partial<INoteMetadata>;
+  status?: Partial<INoteStatus>;
+}
+
+/**
+ * 查询笔记的请求参数
+ */
+export interface QueryNotesRequest {
+  keyword?: string;
+  tags?: string[];
+  isFavorite?: boolean;
+  isArchived?: boolean;
+  isDeleted?: boolean;
+  isPinned?: boolean;
+  isTrashed?: boolean;
+  page?: number;
+  pageSize?: number;
+  sortBy?: 'createdAt' | 'updatedAt' | 'title';
+  sortOrder?: 'asc' | 'desc';
+}
+
+/**
+ * 查询笔记的响应结果
+ */
+export interface QueryNotesResponse {
+  notes: INote[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+/**
+ * 批量操作笔记的请求参数
+ */
+export interface BatchNoteRequest {
+  noteIds: string[];
+}
+
+/**
+ * 笔记状态更新请求参数
+ */
+export interface UpdateNoteStatusRequest {
+  id: string;
+  status: Partial<INoteStatus>;
+}
 
 /**
  * 笔记API接口
  */
 export interface NoteAPI {
+  // 基础CRUD操作
   /**
-   * 创建新笔记
-   * @param title 笔记标题
-   * @param parentId 父页面ID
-   * @returns Promise<NoteAPIResponse<NotePage>>
+   * 创建笔记
    */
-  createNote: (
-    title?: string,
-    parentId?: string
-  ) => Promise<NoteAPIResponse<NotePage>>;
+  createNote(request: CreateNoteRequest): Promise<NoteAPIResponse<INote>>;
 
   /**
-   * 获取笔记
-   * @param noteId 笔记ID
-   * @returns Promise<NoteAPIResponse<NotePage>>
+   * 根据ID获取笔记
    */
-  getNote: (noteId: string) => Promise<NoteAPIResponse<NotePage>>;
+  getNoteById(id: string): Promise<NoteAPIResponse<INote>>;
 
   /**
-   * 更新笔记字段
-   * @param noteId 笔记ID
-   * @param updates 要更新的字段
-   * @returns Promise<NoteAPIResponse<NotePage>>
+   * 查询笔记列表
    */
-  updateNote: (
-    noteId: string,
-    updates: Partial<NotePage>
-  ) => Promise<NoteAPIResponse<NotePage>>;
+  queryNotes(
+    request?: QueryNotesRequest
+  ): Promise<NoteAPIResponse<QueryNotesResponse>>;
 
   /**
-   * 删除笔记
-   * @param noteId 笔记ID
-   * @returns Promise<NoteAPIResponse>
+   * 更新笔记
    */
-  deleteNote: (noteId: string) => Promise<NoteAPIResponse>;
+  updateNote(request: UpdateNoteRequest): Promise<NoteAPIResponse<INote>>;
 
   /**
-   * 移动笔记到垃圾桶
-   * @param noteId 笔记ID
-   * @returns Promise<NoteAPIResponse<NotePage>>
+   * 删除笔记（软删除）
    */
-  moveToTrash: (noteId: string) => Promise<NoteAPIResponse<NotePage>>;
+  deleteNote(id: string): Promise<NoteAPIResponse<boolean>>;
 
   /**
-   * 从垃圾桶恢复笔记
-   * @param noteId 笔记ID
-   * @returns Promise<NoteAPIResponse<NotePage>>
+   * 永久删除笔记
    */
-  restoreFromTrash: (noteId: string) => Promise<NoteAPIResponse<NotePage>>;
+  permanentlyDeleteNote(id: string): Promise<NoteAPIResponse<boolean>>;
+
+  // 状态管理操作
+  /**
+   * 更新笔记状态
+   */
+  updateNoteStatus(
+    request: UpdateNoteStatusRequest
+  ): Promise<NoteAPIResponse<INote>>;
 
   /**
-   * 归档笔记
-   * @param noteId 笔记ID
-   * @returns Promise<NoteAPIResponse<NotePage>>
+   * 收藏/取消收藏笔记
    */
-  archiveNote: (noteId: string) => Promise<NoteAPIResponse<NotePage>>;
+  toggleFavorite(id: string): Promise<NoteAPIResponse<INote>>;
 
   /**
-   * 取消归档笔记
-   * @param noteId 笔记ID
-   * @returns Promise<NoteAPIResponse<NotePage>>
+   * 归档/取消归档笔记
    */
-  unarchiveNote: (noteId: string) => Promise<NoteAPIResponse<NotePage>>;
+  toggleArchive(id: string): Promise<NoteAPIResponse<INote>>;
 
   /**
-   * 切换笔记收藏状态
-   * @param noteId 笔记ID
-   * @returns Promise<NoteAPIResponse<NotePage>>
+   * 置顶/取消置顶笔记
    */
-  toggleFavorite: (noteId: string) => Promise<NoteAPIResponse<NotePage>>;
+  togglePin(id: string): Promise<NoteAPIResponse<INote>>;
 
   /**
-   * 获取所有笔记（从索引）
-   * @returns Promise<NoteAPIResponse<NoteIndexItem[]>>
+   * 移动到回收站
    */
-  getAllNotes: () => Promise<NoteAPIResponse<NoteIndexItem[]>>;
+  moveToTrash(id: string): Promise<NoteAPIResponse<INote>>;
 
   /**
-   * 重建笔记索引
-   * @returns Promise<NoteAPIResponse>
+   * 从回收站恢复
    */
-  rebuildIndex: () => Promise<NoteAPIResponse>;
-}
+  restoreFromTrash(id: string): Promise<NoteAPIResponse<INote>>;
 
-/**
- * 笔记API响应结果
- */
-interface NoteAPIResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: string;
-  message?: string;
+  // 批量操作
+  /**
+   * 批量删除笔记
+   */
+  batchDeleteNotes(
+    request: BatchNoteRequest
+  ): Promise<NoteAPIResponse<boolean>>;
+
+  /**
+   * 批量归档笔记
+   */
+  batchArchiveNotes(
+    request: BatchNoteRequest
+  ): Promise<NoteAPIResponse<boolean>>;
+
+  /**
+   * 批量移动到回收站
+   */
+  batchMoveToTrash(
+    request: BatchNoteRequest
+  ): Promise<NoteAPIResponse<boolean>>;
+
+  /**
+   * 批量恢复笔记
+   */
+  batchRestoreNotes(
+    request: BatchNoteRequest
+  ): Promise<NoteAPIResponse<boolean>>;
+
+  // 搜索和筛选
+  /**
+   * 搜索笔记
+   */
+  searchNotes(keyword: string): Promise<NoteAPIResponse<INote[]>>;
+
+  /**
+   * 根据标签获取笔记
+   */
+  getNotesByTags(tags: string[]): Promise<NoteAPIResponse<INote[]>>;
+
+  /**
+   * 获取所有标签
+   */
+  getAllTags(): Promise<NoteAPIResponse<string[]>>;
+
+  /**
+   * 获取收藏的笔记
+   */
+  getFavoriteNotes(): Promise<NoteAPIResponse<INote[]>>;
+
+  /**
+   * 获取归档的笔记
+   */
+  getArchivedNotes(): Promise<NoteAPIResponse<INote[]>>;
+
+  /**
+   * 获取回收站中的笔记
+   */
+  getTrashedNotes(): Promise<NoteAPIResponse<INote[]>>;
+
+  /**
+   * 获取置顶的笔记
+   */
+  getPinnedNotes(): Promise<NoteAPIResponse<INote[]>>;
+
+  // 统计信息
+  /**
+   * 获取笔记统计信息
+   */
+  getNoteStats(): Promise<
+    NoteAPIResponse<{
+      total: number;
+      favorite: number;
+      archived: number;
+      trashed: number;
+      pinned: number;
+    }>
+  >;
 }
