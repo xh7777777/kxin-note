@@ -7,6 +7,8 @@ import type {
   INoteStatus,
   INoteStats,
   INoteSearchIndex,
+  NoteIndexEntry,
+  NoteIndex,
 } from '../../../customTypes/models/note.types';
 import type {
   CreateNoteRequest,
@@ -14,38 +16,6 @@ import type {
   NoteAPIResponse,
 } from '../../../customTypes/interface/noteApi.type.ts';
 import { v4 as uuidv4 } from 'uuid';
-
-/**
- * 笔记索引条目
- */
-interface NoteIndexEntry {
-  id: string;
-  title: string;
-  summary?: string;
-  tags: string[];
-  filePath: string;
-  createdAt: string;
-  updatedAt: string;
-  wordCount: number;
-  status: {
-    isFavorite: boolean;
-    isArchived: boolean;
-    isDeleted: boolean;
-    isPinned: boolean;
-    isTrashed: boolean;
-  };
-  searchIndex: INoteSearchIndex;
-}
-
-/**
- * 笔记索引表结构
- */
-interface NoteIndex {
-  version: string;
-  lastUpdated: string;
-  totalNotes: number;
-  notes: NoteIndexEntry[];
-}
 
 /**
  * 笔记Hook返回接口
@@ -74,7 +44,7 @@ export interface UseNoteRetrun {
   /**
    * 获取笔记列表
    */
-  getNotesList: () => Promise<NoteAPIResponse<INote[]>>;
+  getNotesList: () => Promise<NoteAPIResponse<NoteIndexEntry[]>>;
 
   /**
    * 删除笔记
@@ -149,6 +119,8 @@ export function useNote(): UseNoteRetrun {
       id: note.id,
       title: note.metadata.title,
       summary: note.metadata.summary,
+      icon: note.metadata.icon,
+      cover: note.metadata.cover,
       tags: note.metadata.tags || [],
       filePath,
       createdAt: note.metadata.createdAt,
@@ -531,30 +503,13 @@ export function useNote(): UseNoteRetrun {
   /**
    * 获取笔记列表
    */
-  async function getNotesList(): Promise<NoteAPIResponse<INote[]>> {
+  async function getNotesList(): Promise<NoteAPIResponse<NoteIndexEntry[]>> {
     try {
       const index = await readIndex();
-      const notes: INote[] = [];
-
-      // 根据索引加载所有笔记
-      for (const indexEntry of index.notes) {
-        try {
-          // 检查文件是否存在
-          await fs.access(indexEntry.filePath);
-          const fileContent = await fs.readFile(indexEntry.filePath, 'utf-8');
-          const note: INote = JSON.parse(fileContent);
-          notes.push(note);
-        } catch (error) {
-          // 如果文件不存在，从索引中删除这个条目
-          console.warn(`笔记文件不存在，从索引中删除: ${indexEntry.filePath}`);
-          await removeNoteFromIndex(indexEntry.id);
-        }
-      }
-
       return {
         success: true,
-        data: notes,
-        message: `成功获取 ${notes.length} 篇笔记`,
+        data: index.notes,
+        message: `成功获取 ${index.totalNotes} 篇笔记`,
       };
     } catch (error) {
       console.error('获取笔记列表失败:', error);

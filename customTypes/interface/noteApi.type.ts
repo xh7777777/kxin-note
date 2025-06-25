@@ -11,6 +11,7 @@ import type {
   ISearchResult,
   ISearchSuggestion,
   NoteRelationType,
+  NoteIndexEntry,
 } from '../models/note.types';
 
 /**
@@ -436,5 +437,5 @@ export interface NoteAPI {
   /**
    * 获取笔记列表
    */
-  getNotesList(): Promise<NoteAPIResponse<INote[]>>;
+  getNotesList(): Promise<NoteAPIResponse<NoteIndexEntry[]>>;
 }

@@ -186,3 +186,37 @@ export interface ISearchSuggestion {
   count: number;
   score: number;
 }
+
+/**
+ * 笔记索引条目
+ */
+export interface NoteIndexEntry {
+  id: string;
+  title: string;
+  icon?: string;
+  cover?: string;
+  summary?: string;
+  tags: string[];
+  filePath: string;
+  createdAt: string;
+  updatedAt: string;
+  wordCount: number;
+  status: {
+    isFavorite: boolean;
+    isArchived: boolean;
+    isDeleted: boolean;
+    isPinned: boolean;
+    isTrashed: boolean;
+  };
+  searchIndex: INoteSearchIndex;
+}
+
+/**
+ * 笔记索引表结构
+ */
+export interface NoteIndex {
+  version: string;
+  lastUpdated: string;
+  totalNotes: number;
+  notes: NoteIndexEntry[];
+}

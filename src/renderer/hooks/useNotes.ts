@@ -3,6 +3,7 @@ import type {
   INote,
   INoteMetadata,
   INoteStatus,
+  NoteIndexEntry,
 } from '@customTypes/models/note.types';
 import type {
   CreateNoteRequest,
@@ -31,7 +32,7 @@ interface UseNotesReturn {
   error: Ref<string | null>;
   currentNote: Ref<INote | null>;
   notes: Ref<INote[]>;
-
+  sideBarNotes: Ref<NoteIndexEntry[]>;
   // 计算属性
   hasNotes: Readonly<Ref<boolean>>;
   notesCount: Readonly<Ref<number>>;
@@ -43,7 +44,9 @@ interface UseNotesReturn {
   setCurrentNote: (note: INote | null) => void;
   clearError: () => void;
   refreshNotes: () => Promise<void>;
-  getNotesListAndUpdate: () => Promise<NoteAPIResponse<INote[]>>;
+  getNotesList: (
+    updateList: boolean
+  ) => Promise<NoteAPIResponse<NoteIndexEntry[]>>;
 }
 
 function useNotes(): UseNotesReturn {
@@ -62,6 +65,7 @@ function useNotes(): UseNotesReturn {
   const error = ref<string | null>(null);
   const currentNote = ref<INote | null>(null);
   const notes = ref<INote[]>([]);
+  const sideBarNotes = ref<NoteIndexEntry[]>([]);
 
   // 计算属性
   const hasNotes = computed(() => notes.value.length > 0);
@@ -70,18 +74,16 @@ function useNotes(): UseNotesReturn {
   /**
    * 获取笔记列表
    */
-  async function getNotesList(): Promise<NoteAPIResponse<INote[]>> {
+  async function getNotesList(
+    updateList: boolean = false
+  ): Promise<NoteAPIResponse<NoteIndexEntry[]>> {
     const response = await window.noteAPI.getNotesList();
-    return response;
-  }
-
-  /**
-   * 获取笔记列表, 并更新笔记列表
-   */
-  async function getNotesListAndUpdate(): Promise<NoteAPIResponse<INote[]>> {
-    const response = await window.noteAPI.getNotesList();
-    if (response.success && response.data) {
-      notes.value = response.data;
+    if (updateList) {
+      if (response.success && response.data) {
+        sideBarNotes.value = response.data;
+      } else {
+        sideBarNotes.value = [];
+      }
     }
     return response;
   }
@@ -285,6 +287,7 @@ function useNotes(): UseNotesReturn {
     error,
     currentNote,
     notes,
+    sideBarNotes,
 
     // 计算属性
     hasNotes,
@@ -297,7 +300,7 @@ function useNotes(): UseNotesReturn {
     setCurrentNote,
     clearError,
     refreshNotes,
-    getNotesListAndUpdate,
+    getNotesList,
   };
 }
 

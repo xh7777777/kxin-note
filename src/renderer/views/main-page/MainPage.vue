@@ -3,7 +3,7 @@
     <!-- 左侧边栏组件 -->
     <SideBar
       :search-query="searchQuery"
-      :note-pages="notes"
+      :note-pages="sideBarNotes"
       :active-note-id="''"
       @add-note="addNote"
       @select-note="handleSelectNote"
@@ -133,7 +133,7 @@ const { warning, info, success } = useMessage();
 const searchQuery = ref('');
 const sidebarCollapsed = ref(false);
 const chatVisible = ref(false);
-const { getNotesListAndUpdate, createNote, notes } = useNotes();
+const { getNotesList, createNote, notes, sideBarNotes } = useNotes();
 
 // 快捷键处理
 const handleKeyDown = (event: any) => {
@@ -149,14 +149,14 @@ const toggleChat = () => {
 };
 
 onMounted(async () => {
-  const notes = await getNotesListAndUpdate();
+  const notes = await getNotesList(true);
   console.log('notes', notes);
 });
 
 const addNote = async () => {
   const response = await createNote({});
   console.log('response', response);
-  const notes = await getNotesListAndUpdate();
+  const notes = await getNotesList(true);
   console.log('notes', notes);
 };
 
