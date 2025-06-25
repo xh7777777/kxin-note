@@ -4,7 +4,7 @@
     <SideBar
       :search-query="searchQuery"
       :note-pages="sideBarNotes"
-      :active-note-id="''"
+      :active-note-id="state.currentNote?.id || ''"
       @add-note="addNote"
       @select-note="handleSelectNote"
       @toggle-dark-mode="toggleDarkMode"
@@ -23,7 +23,7 @@
     >
       <div
         class="w-full h-full rounded-lg shadow-md overflow-hidden flex justify-center items-center bg-white"
-        v-if="false"
+        v-if="!state.currentNote"
       >
         <!-- 没有选中笔记时显示 -->
         <div class="text-center max-w-xs">
@@ -73,7 +73,10 @@
         class="h-full w-full rounded-lg shadow-md overflow-hidden relative"
         v-else
       >
-        <MuyaNoteView :note-id="''" />
+        <MuyaNoteView
+          :current-note="state.currentNote"
+          :key="state.currentNote?.id"
+        />
       </div>
     </div>
 
@@ -133,8 +136,8 @@ const { warning, info, success } = useMessage();
 const searchQuery = ref('');
 const sidebarCollapsed = ref(false);
 const chatVisible = ref(false);
-const { getNotesList, createNote, notes, sideBarNotes } = useNotes();
-
+const { getNotesList, createNote, notes, sideBarNotes, state, getNoteById } =
+  useNotes();
 // 快捷键处理
 const handleKeyDown = (event: any) => {
   if ((event.ctrlKey || event.metaKey) && event.key === 'l') {
@@ -161,7 +164,8 @@ const addNote = async () => {
 };
 
 const handleSelectNote = async (noteId: string) => {
-  console.log('handleSelectNote', noteId);
+  const note = await getNoteById(noteId);
+  console.log('note', note);
 };
 
 const handleSidebarCollapse = (collapsed: boolean) => {

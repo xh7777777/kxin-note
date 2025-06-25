@@ -89,7 +89,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import {
   MoreHorizontal,
   Link,
@@ -98,45 +98,16 @@ import {
   Edit,
   Languages,
   Upload,
+  Download,
 } from 'lucide-vue-next';
-import {
-  CodeBlockLanguageSelector,
-  EmojiSelector,
-  ImageResizeBar,
-  ImageToolBar,
-  InlineFormatToolbar,
-  MarkdownToHtml,
-  Muya,
-  ParagraphFrontButton,
-  ParagraphFrontMenu,
-  ParagraphQuickInsertMenu,
-  PreviewToolBar,
-  TableColumnToolbar,
-  TableDragBar,
-  TableRowColumMenu,
-  zh,
-} from '@muyajs/core';
+import { INote } from '@customTypes/models/note.types';
+import { useMuya } from '@renderer/hooks/useMuya';
+import { useNotes } from '@renderer/hooks/useNotes';
 
-Muya.use(EmojiSelector);
-Muya.use(InlineFormatToolbar);
-Muya.use(ImageToolBar);
-Muya.use(ImageResizeBar);
-Muya.use(CodeBlockLanguageSelector);
-
-Muya.use(ParagraphFrontButton);
-Muya.use(ParagraphFrontMenu);
-Muya.use(TableColumnToolbar);
-Muya.use(ParagraphQuickInsertMenu);
-Muya.use(TableDragBar);
-Muya.use(TableRowColumMenu);
-Muya.use(PreviewToolBar);
-
-import '@muyajs/core/lib/style.css';
-
-const containerRef = ref<HTMLElement>();
+const { containerRef, init, editorRef, clear } = useMuya();
 
 const props = defineProps<{
-  noteId: string;
+  currentNote: INote;
 }>();
 
 const emit = defineEmits<{
@@ -166,7 +137,7 @@ const toggleMoreActions = () => {
 // 处理删除
 const handleDelete = () => {
   if (confirm('确定要删除这篇笔记吗？')) {
-    emit('delete-note', props.noteId);
+    // emit('delete-note', props.noteId);
   }
 };
 
@@ -181,7 +152,7 @@ const handleExport = (format: 'markdown' | 'html' | 'pdf') => {
 const handleMenuAction = (action: string) => {
   switch (action) {
     case 'move-to-trash':
-      emit('move-to-trash', props.noteId);
+      //   emit('move-to-trash', props.noteId);
       break;
     default:
       break;
@@ -205,32 +176,19 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 };
 
-const changeNotePage = async (noteId: string) => {};
-
 const handleUpdateNoteItem = (noteId: string, key: string, value: any) => {
   emit('update-note-item', noteId, key, value);
 };
 
 onMounted(() => {
-  try {
-    const muya = new Muya(containerRef.value, {
-      markdown: 'Hello world',
-    });
-
-    muya.locale(zh);
-
-    muya.init();
-  } catch (error) {
-    console.error(error);
-  }
+  init(props.currentNote.metadata.content || '');
 });
 
 onUnmounted(async () => {
   // TODO: 保存笔记, 记录到最近打开队列中
+  console.log('onUnmounted');
 });
 
-defineExpose({
-  changeNotePage,
-});
+defineExpose({});
 </script>
 <style lang="scss" scoped></style>

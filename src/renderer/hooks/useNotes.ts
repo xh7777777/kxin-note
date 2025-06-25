@@ -10,7 +10,6 @@ import type {
   UpdateNoteRequest,
   NoteAPIResponse,
 } from '@customTypes/interface/noteApi.type';
-import { useNoteStore } from '@renderer/store/modules/noteStore';
 
 /**
  * 笔记状态管理
@@ -50,8 +49,6 @@ interface UseNotesReturn {
 }
 
 function useNotes(): UseNotesReturn {
-  const noteStore = useNoteStore();
-
   // 响应式状态
   const state = reactive<NotesState>({
     loading: false,
@@ -134,10 +131,6 @@ function useNotes(): UseNotesReturn {
           loading: false,
           currentNote: response.data,
         });
-
-        // 更新store
-        noteStore.setCurrentNoteId(response.data.id);
-        noteStore.addNote(response.data);
       } else {
         updateState({
           loading: false,
@@ -165,7 +158,6 @@ function useNotes(): UseNotesReturn {
           currentNote: cachedNote,
           loading: false,
         });
-        noteStore.setCurrentNoteId(id);
         return {
           success: true,
           data: cachedNote,
@@ -189,9 +181,7 @@ function useNotes(): UseNotesReturn {
           updateState({ notes: newNotes });
         }
 
-        // 更新store
-        noteStore.setCurrentNoteId(id);
-        noteStore.addNote(response.data);
+        console.log('notes', state);
       } else {
         updateState({
           loading: false,
@@ -231,9 +221,6 @@ function useNotes(): UseNotesReturn {
         if (currentNote.value?.id === request.id) {
           updateState({ currentNote: response.data });
         }
-
-        // 更新store
-        noteStore.addNote(response.data);
       } else {
         updateState({
           loading: false,
@@ -252,11 +239,6 @@ function useNotes(): UseNotesReturn {
    */
   function setCurrentNote(note: INote | null) {
     updateState({ currentNote: note });
-    if (note) {
-      noteStore.setCurrentNoteId(note.id);
-    } else {
-      noteStore.setCurrentNoteId('');
-    }
   }
 
   /**

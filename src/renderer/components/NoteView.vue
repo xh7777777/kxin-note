@@ -123,15 +123,6 @@ const emit = defineEmits<{
   (e: 'move-to-trash', noteId: string): void;
 }>();
 
-const { getNoteById, updateContent } = useNotes();
-
-const { editor, containerRef, initEditor, noteContent, noteInfo, saveEditor } =
-  useEditorJs({
-    onSave: async (data: INote) => {
-      await updateContent(noteInfo.value.id, data);
-    },
-  });
-
 // 下拉菜单状态
 const showExportDropdown = ref(false);
 const showMoreActions = ref(false);
