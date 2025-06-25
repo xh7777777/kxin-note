@@ -1,7 +1,7 @@
 import { ipcRenderer, shell } from 'electron';
 import type { IIpcRendererInvoke, IIpcRendererOn } from '../src/ipc/index';
 import type { NoteAPI } from './interface/noteApi.type';
-import type { FileAPI } from './interface/fileApi.type';
+import type { INote } from './models/note.types';
 
 /**
  * 渲染进程给主进程发送消息
@@ -42,6 +42,13 @@ type IpcRendererOn = {
   };
 };
 
+/**
+ * Electron API接口
+ */
+interface ElectronAPI {
+  invoke: (channel: string, ...args: any[]) => Promise<any>;
+}
+
 interface AnyObject {
   [key: string]: any;
 }
@@ -68,14 +75,17 @@ declare global {
      * 但是只能是给主进程发消息(invoke)和监听主进程的消息(on/once)
      */
     ipcRendererChannel: IpcRendererInvoke & IpcRendererOn;
+
+    /**
+     * Electron通用API
+     */
+    electronAPI: ElectronAPI;
+
     /**
      * 笔记操作API
      */
     noteAPI: NoteAPI;
-    /**
-     * 文件操作API
-     */
-    fileAPI: FileAPI;
+
     systemInfo: {
       platform: string;
       release: string;

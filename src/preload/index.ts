@@ -32,46 +32,20 @@ function getIpcRenderer() {
 
 contextBridge.exposeInMainWorld('ipcRendererChannel', getIpcRenderer());
 
-// 暴露笔记操作API
+// 暴露新的笔记操作API（与note-hook匹配）
+contextBridge.exposeInMainWorld('electronAPI', {
+  invoke: (channel: string, ...args: any[]) =>
+    ipcRenderer.invoke(channel, ...args),
+});
+
+// 保持旧的noteAPI以兼容现有代码
 contextBridge.exposeInMainWorld('noteAPI', {
-  // 创建新笔记
-  createNote: (title?: string, parentId?: string) =>
-    ipcRenderer.invoke('note:create', title, parentId),
-
-  // 获取笔记
-  getNote: (noteId: string) => ipcRenderer.invoke('note:get', noteId),
-
-  // 更新笔记
-  updateNote: (noteId: string, updates: any) =>
-    ipcRenderer.invoke('note:update', noteId, updates),
-
-  // 删除笔记
-  deleteNote: (noteId: string) => ipcRenderer.invoke('note:delete', noteId),
-
-  // 移动笔记到垃圾桶
-  moveToTrash: (noteId: string) =>
-    ipcRenderer.invoke('note:moveToTrash', noteId),
-
-  // 从垃圾桶恢复笔记
-  restoreFromTrash: (noteId: string) =>
-    ipcRenderer.invoke('note:restoreFromTrash', noteId),
-
-  // 归档笔记
-  archiveNote: (noteId: string) => ipcRenderer.invoke('note:archive', noteId),
-
-  // 取消归档笔记
-  unarchiveNote: (noteId: string) =>
-    ipcRenderer.invoke('note:unarchive', noteId),
-
-  // 切换笔记收藏状态
-  toggleFavorite: (noteId: string) =>
-    ipcRenderer.invoke('note:toggleFavorite', noteId),
-
-  // 获取所有笔记
-  getAllNotes: () => ipcRenderer.invoke('notes:getAll'),
-
-  // 重建笔记索引
-  rebuildIndex: () => ipcRenderer.invoke('notes:rebuildIndex'),
+  // 新的API（与note-hook匹配）
+  createNote: (request: any) => ipcRenderer.invoke('createNote', request),
+  getNoteById: (id: string) => ipcRenderer.invoke('getNoteById', id),
+  updateNote: (request: any) => ipcRenderer.invoke('updateNote', request),
+  getNotesDirectory: () => ipcRenderer.invoke('getNotesDirectory'),
+  getNotesList: () => ipcRenderer.invoke('getNotesList'),
 });
 
 // 暴露文件操作API

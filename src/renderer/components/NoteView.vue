@@ -102,7 +102,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useNotes } from '../hooks/useNotes';
 import { useEditorJs } from '../hooks/useEdjtorJs';
-import type { NoteContent } from '@customTypes/models/note.types';
+import type { INote } from '@customTypes/models/note.types';
 import {
   MoreHorizontal,
   Link,
@@ -127,7 +127,7 @@ const { getNoteById, updateContent } = useNotes();
 
 const { editor, containerRef, initEditor, noteContent, noteInfo, saveEditor } =
   useEditorJs({
-    onSave: async (data: NoteContent) => {
+    onSave: async (data: INote) => {
       await updateContent(noteInfo.value.id, data);
     },
   });

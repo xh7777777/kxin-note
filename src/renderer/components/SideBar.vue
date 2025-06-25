@@ -234,10 +234,10 @@
                 <div
                   class="w-5 h-5 rounded flex items-center justify-center text-xs"
                 >
-                  {{ notePage.icon }}
+                  {{ notePage.metadata.icon }}
                 </div>
                 <span class="text-sm flex-1">
-                  {{ notePage.title || '未命名笔记' }}
+                  {{ notePage.metadata.title || '未命名笔记' }}
                 </span>
               </div>
             </div>
@@ -250,12 +250,12 @@
 
 <script setup lang="ts">
 import { computed, ref, nextTick, onMounted, onUnmounted, watch } from 'vue';
-import { NoteIndexItem } from '@customTypes/models/note.types';
+import { INote } from '@customTypes/models/note.types';
 
 // Props
 const props = defineProps<{
   searchQuery: string;
-  notePages: NoteIndexItem[];
+  notePages: INote[];
   activeNoteId: string | null;
 }>();
 

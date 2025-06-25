@@ -3,7 +3,7 @@
     <!-- 左侧边栏组件 -->
     <SideBar
       :search-query="searchQuery"
-      :note-pages="[]"
+      :note-pages="notes"
       :active-note-id="''"
       @add-note="addNote"
       @select-note="handleSelectNote"
@@ -72,7 +72,9 @@
       <div
         class="h-full w-full rounded-lg shadow-md overflow-hidden relative"
         v-else
-      ></div>
+      >
+        <MuyaNoteView :note-id="''" />
+      </div>
     </div>
 
     <!-- 右侧 AI 聊天区域 -->
@@ -123,6 +125,7 @@ import MuyaNoteView from '../../components/MuyaNoteView.vue';
 import AIChatView from '../../components/AIChatView.vue';
 import PopMessage from '../../components/PopMessage.vue';
 import { useMessage } from '../../hooks/useMessage';
+import { useNotes } from '../../hooks/useNotes';
 
 const { warning, info, success } = useMessage();
 
@@ -130,6 +133,7 @@ const { warning, info, success } = useMessage();
 const searchQuery = ref('');
 const sidebarCollapsed = ref(false);
 const chatVisible = ref(false);
+const { getNotesListAndUpdate, createNote, notes } = useNotes();
 
 // 快捷键处理
 const handleKeyDown = (event: any) => {
@@ -145,17 +149,15 @@ const toggleChat = () => {
 };
 
 onMounted(async () => {
-  // 添加全局键盘事件监听
-  document.addEventListener('keydown', handleKeyDown);
-});
-
-onUnmounted(() => {
-  // 移除键盘事件监听
-  document.removeEventListener('keydown', handleKeyDown);
+  const notes = await getNotesListAndUpdate();
+  console.log('notes', notes);
 });
 
 const addNote = async () => {
-  console.log('addNote');
+  const response = await createNote({});
+  console.log('response', response);
+  const notes = await getNotesListAndUpdate();
+  console.log('notes', notes);
 };
 
 const handleSelectNote = async (noteId: string) => {

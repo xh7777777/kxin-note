@@ -1,119 +1,303 @@
-import { ref, computed } from 'vue';
+import { ref, reactive, computed, readonly, type Ref } from 'vue';
 import type {
-  NoteIndexItem,
-  NoteContent,
-  NotePage,
+  INote,
+  INoteMetadata,
+  INoteStatus,
 } from '@customTypes/models/note.types';
+import type {
+  CreateNoteRequest,
+  UpdateNoteRequest,
+  NoteAPIResponse,
+} from '@customTypes/interface/noteApi.type';
 import { useNoteStore } from '@renderer/store/modules/noteStore';
 
-function useNotes() {
-  const notePages = ref<NoteIndexItem[]>([]);
-  const noteLoading = ref(false);
-  const noteError = ref<string | null>(null);
-  const selectedNoteContent = ref<NoteContent | null>(null);
+/**
+ * 笔记状态管理
+ */
+interface NotesState {
+  loading: boolean;
+  error: string | null;
+  currentNote: INote | null;
+  notes: INote[];
+}
+
+/**
+ * useNotes Hook返回接口
+ */
+interface UseNotesReturn {
+  // 状态
+  state: NotesState;
+  loading: Ref<boolean>;
+  error: Ref<string | null>;
+  currentNote: Ref<INote | null>;
+  notes: Ref<INote[]>;
+
+  // 计算属性
+  hasNotes: Readonly<Ref<boolean>>;
+  notesCount: Readonly<Ref<number>>;
+
+  // 方法
+  createNote: (request: CreateNoteRequest) => Promise<NoteAPIResponse<INote>>;
+  getNoteById: (id: string) => Promise<NoteAPIResponse<INote>>;
+  updateNote: (request: UpdateNoteRequest) => Promise<NoteAPIResponse<INote>>;
+  setCurrentNote: (note: INote | null) => void;
+  clearError: () => void;
+  refreshNotes: () => Promise<void>;
+  getNotesListAndUpdate: () => Promise<NoteAPIResponse<INote[]>>;
+}
+
+function useNotes(): UseNotesReturn {
   const noteStore = useNoteStore();
-  const activeNoteId = computed(() => noteStore.getCurrentNoteId);
 
-  const createNote = async () => {
-    const res = await window.noteAPI.createNote();
-    if (res.success) {
-      await getAllNotes();
-      return res.data;
-    }
-    return null;
-  };
+  // 响应式状态
+  const state = reactive<NotesState>({
+    loading: false,
+    error: null,
+    currentNote: null,
+    notes: [],
+  });
 
-  const getAllNotes = async () => {
-    const res = await window.noteAPI.getAllNotes();
-    if (res.success) {
-      notePages.value = res.data || [];
-    } else {
-      console.error('获取笔记列表失败', res.error);
-    }
-  };
+  // 响应式引用
+  const loading = ref(false);
+  const error = ref<string | null>(null);
+  const currentNote = ref<INote | null>(null);
+  const notes = ref<INote[]>([]);
 
-  const getNoteById = async (id: string) => {
-    noteLoading.value = true;
-    const res = await window.noteAPI.getNote(id);
-    if (res.success) {
-      noteLoading.value = false;
-      return res.data;
-    }
-    noteError.value = res.error;
-    noteLoading.value = false;
-    return null;
-  };
+  // 计算属性
+  const hasNotes = computed(() => notes.value.length > 0);
+  const notesCount = computed(() => notes.value.length);
 
-  const selectNote = async (id: string) => {
-    if (activeNoteId.value === id) {
-      return false;
+  /**
+   * 获取笔记列表
+   */
+  async function getNotesList(): Promise<NoteAPIResponse<INote[]>> {
+    const response = await window.noteAPI.getNotesList();
+    return response;
+  }
+
+  /**
+   * 获取笔记列表, 并更新笔记列表
+   */
+  async function getNotesListAndUpdate(): Promise<NoteAPIResponse<INote[]>> {
+    const response = await window.noteAPI.getNotesList();
+    if (response.success && response.data) {
+      notes.value = response.data;
     }
-    noteStore.setCurrentNoteId(id);
-    const note = await getNoteById(id);
+    return response;
+  }
+
+  /**
+   * 更新状态
+   */
+  function updateState(updates: Partial<NotesState>) {
+    Object.assign(state, updates);
+    if (updates.loading !== undefined) loading.value = updates.loading;
+    if (updates.error !== undefined) error.value = updates.error;
+    if (updates.currentNote !== undefined)
+      currentNote.value = updates.currentNote;
+    if (updates.notes !== undefined) notes.value = updates.notes;
+  }
+
+  /**
+   * 处理错误
+   */
+  function handleError(err: any, message: string = '操作失败') {
+    console.error(message, err);
+    const errorMessage = err instanceof Error ? err.message : message;
+    updateState({ error: errorMessage, loading: false });
+    return {
+      success: false,
+      error: errorMessage,
+      message,
+    } as NoteAPIResponse<any>;
+  }
+
+  /**
+   * 创建笔记
+   */
+  async function createNote(
+    request: CreateNoteRequest
+  ): Promise<NoteAPIResponse<INote>> {
+    updateState({ loading: true, error: null });
+
+    try {
+      const response = await window.noteAPI.createNote(request);
+      console.log('response', response);
+
+      if (response.success && response.data) {
+        // 更新本地状态
+        const newNotes = [...notes.value, response.data];
+        updateState({
+          notes: newNotes,
+          loading: false,
+          currentNote: response.data,
+        });
+
+        // 更新store
+        noteStore.setCurrentNoteId(response.data.id);
+        noteStore.addNote(response.data);
+      } else {
+        updateState({
+          loading: false,
+          error: response.error || '创建笔记失败',
+        });
+      }
+
+      return response;
+    } catch (err) {
+      return handleError(err, '创建笔记失败');
+    }
+  }
+
+  /**
+   * 根据ID获取笔记
+   */
+  async function getNoteById(id: string): Promise<NoteAPIResponse<INote>> {
+    updateState({ loading: true, error: null });
+
+    try {
+      // 先检查本地缓存
+      const cachedNote = notes.value.find(note => note.id === id);
+      if (cachedNote) {
+        updateState({
+          currentNote: cachedNote,
+          loading: false,
+        });
+        noteStore.setCurrentNoteId(id);
+        return {
+          success: true,
+          data: cachedNote,
+          message: '获取笔记成功（从缓存）',
+        };
+      }
+
+      const response = await window.noteAPI.getNoteById(id);
+
+      if (response.success && response.data) {
+        // 更新本地状态
+        updateState({
+          currentNote: response.data,
+          loading: false,
+        });
+
+        // 如果这个笔记不在列表中，添加到列表
+        const noteExists = notes.value.some(note => note.id === id);
+        if (!noteExists) {
+          const newNotes = [...notes.value, response.data];
+          updateState({ notes: newNotes });
+        }
+
+        // 更新store
+        noteStore.setCurrentNoteId(id);
+        noteStore.addNote(response.data);
+      } else {
+        updateState({
+          loading: false,
+          error: response.error || '获取笔记失败',
+        });
+      }
+
+      return response;
+    } catch (err) {
+      return handleError(err, '获取笔记失败');
+    }
+  }
+
+  /**
+   * 更新笔记
+   */
+  async function updateNote(
+    request: UpdateNoteRequest
+  ): Promise<NoteAPIResponse<INote>> {
+    updateState({ loading: true, error: null });
+
+    try {
+      const response = await window.noteAPI.updateNote(request);
+
+      if (response.success && response.data) {
+        // 更新本地状态
+        const updatedNotes = notes.value.map(note =>
+          note.id === request.id ? response.data! : note
+        );
+
+        updateState({
+          notes: updatedNotes,
+          loading: false,
+        });
+
+        // 如果是当前笔记，也更新当前笔记
+        if (currentNote.value?.id === request.id) {
+          updateState({ currentNote: response.data });
+        }
+
+        // 更新store
+        noteStore.addNote(response.data);
+      } else {
+        updateState({
+          loading: false,
+          error: response.error || '更新笔记失败',
+        });
+      }
+
+      return response;
+    } catch (err) {
+      return handleError(err, '更新笔记失败');
+    }
+  }
+
+  /**
+   * 设置当前笔记
+   */
+  function setCurrentNote(note: INote | null) {
+    updateState({ currentNote: note });
     if (note) {
-      selectedNoteContent.value = note.content;
+      noteStore.setCurrentNoteId(note.id);
+    } else {
+      noteStore.setCurrentNoteId('');
     }
-    return true;
-  };
+  }
 
-  const cancelSelectNote = () => {
-    noteStore.setCurrentNoteId('');
-    selectedNoteContent.value = null;
-  };
+  /**
+   * 清除错误
+   */
+  function clearError() {
+    updateState({ error: null });
+  }
 
-  const updateNote = async (id: string, updates: Partial<NotePage>) => {
-    const res = await window.noteAPI.updateNote(id, updates);
-    if (res.success) {
-      return res.data;
+  /**
+   * 刷新笔记列表
+   */
+  async function refreshNotes() {
+    updateState({ loading: true, error: null });
+
+    try {
+      // 暂时只是清除错误状态，未来可以实现获取所有笔记的功能
+      updateState({ loading: false });
+    } catch (err) {
+      handleError(err, '刷新笔记列表失败');
     }
-    return null;
-  };
-
-  const updateTitle = async (id: string, title: string) => {
-    const res = await window.noteAPI.updateNote(id, { title });
-    if (res.success) {
-      return res.data;
-    }
-    return null;
-  };
-
-  const updateIcon = async (id: string, icon: string) => {
-    const res = await window.noteAPI.updateNote(id, { icon });
-    if (res.success) {
-      return res.data;
-    }
-    return null;
-  };
-
-  const updateContent = async (id: string, content: NoteContent) => {
-    const res = await window.noteAPI.updateNote(id, { content });
-    if (res.success) {
-      return res.data;
-    }
-    return null;
-  };
-
-  const moveToTrash = async (id: string) => {
-    const res = await window.noteAPI.moveToTrash(id);
-    if (res.success) {
-      return res.data;
-    }
-    return null;
-  };
+  }
 
   return {
-    notePages,
-    activeNoteId,
+    // 状态
+    state,
+    loading,
+    error,
+    currentNote,
+    notes,
+
+    // 计算属性
+    hasNotes,
+    notesCount,
+
+    // 方法
     createNote,
-    getAllNotes,
     getNoteById,
-    selectNote,
     updateNote,
-    updateTitle,
-    updateIcon,
-    updateContent,
-    moveToTrash,
-    cancelSelectNote,
+    setCurrentNote,
+    clearError,
+    refreshNotes,
+    getNotesListAndUpdate,
   };
 }
 
