@@ -104,7 +104,13 @@ import { INote } from '@customTypes/models/note.types';
 import { useMuya } from '@renderer/hooks/useMuya';
 import { useNotes } from '@renderer/hooks/useNotes';
 
-const { containerRef, init, editorRef, clear } = useMuya();
+const {
+  containerRef,
+  init,
+  clear,
+  registerKeyDownEvent,
+  unregisterKeyDownEvent,
+} = useMuya();
 
 const props = defineProps<{
   currentNote: INote;
@@ -182,11 +188,13 @@ const handleUpdateNoteItem = (noteId: string, key: string, value: any) => {
 
 onMounted(() => {
   init(props.currentNote.metadata.content || '');
+  registerKeyDownEvent();
 });
 
 onUnmounted(async () => {
   // TODO: 保存笔记, 记录到最近打开队列中
   console.log('onUnmounted');
+  unregisterKeyDownEvent();
 });
 
 defineExpose({});
