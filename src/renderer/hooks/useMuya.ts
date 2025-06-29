@@ -16,7 +16,7 @@ import {
   TableRowColumMenu,
   zh,
 } from '@muyajs/core';
-import { INote } from '@customTypes/models/note.types';
+import { eventBus, EventBusKey } from '../utils/eventBus';
 
 Muya.use(EmojiSelector);
 Muya.use(InlineFormatToolbar);
@@ -37,19 +37,18 @@ export function useMuya() {
   let muya: InstanceType<typeof Muya> | null = null;
   let removeUndoListener: (() => void) | null = null;
   let removeRedoListener: (() => void) | null = null;
+  let removeSaveListener: (() => void) | null = null;
+
   const init = (markdown: string) => {
     const editor = new Muya(containerRef.value, {
       markdown: markdown || '',
     });
     editor.locale(zh);
     editor.init();
-    editor.on('content-change', handleContentChange);
     editor.on('selection-change', (changes: any) => {
       console.log('selection-change', changes);
     });
-    // editor.on('json-change', (changes: any) => {
-    //   console.log('json-change', changes);
-    // });
+    editor.on('json-change', handleContentChange);
     muya = editor;
   };
 
@@ -75,11 +74,23 @@ export function useMuya() {
     }
   };
 
+  const handleEditorSave = async () => {
+    try {
+      if (!muya) {
+        throw new Error('Muya is not initialized');
+      }
+      eventBus.emit(EventBusKey.EditorSave, muya.getMarkdown());
+    } catch (error) {
+      console.error('Save operation failed:', error);
+    }
+  };
+
   // 注册 IPC 监听器
   const registerIpcListeners = () => {
     if (window.editorAPI) {
       removeUndoListener = window.editorAPI.onUndo(handleEditorUndo);
       removeRedoListener = window.editorAPI.onRedo(handleEditorRedo);
+      removeSaveListener = window.editorAPI.onSave(handleEditorSave);
     }
   };
 
@@ -93,6 +104,11 @@ export function useMuya() {
       removeRedoListener();
       removeRedoListener = null;
     }
+
+    if (removeSaveListener) {
+      removeSaveListener();
+      removeSaveListener = null;
+    }
   };
 
   const handleContentChange = (changes: any) => {
@@ -100,7 +116,6 @@ export function useMuya() {
       throw new Error('Muya is not initialized');
     }
     const currentMarkdown = muya.getMarkdown();
-    console.log('handleContentChange', currentMarkdown);
   };
 
   return {

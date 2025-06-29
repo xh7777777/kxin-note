@@ -437,13 +437,22 @@ export function useNote(): UseNoteRetrun {
       );
       const newFilePath = path.join(getNotesDirectory(), newFileName);
 
-      // 如果文件名发生变化，删除旧文件
-      if (oldFilePath !== newFilePath) {
-        await fs.unlink(oldFilePath);
-      }
-
       // 保存更新后的笔记
       await fs.writeFile(newFilePath, JSON.stringify(note, null, 2), 'utf-8');
+
+      // 如果文件名发生变化，重命名旧文件
+      if (oldFilePath !== newFilePath) {
+        try {
+          // 检查旧文件是否存在
+          await fs.access(oldFilePath);
+          // 重命名旧文件为备份文件
+          const backupFilePath = oldFilePath + '.backup';
+          await fs.rename(oldFilePath, backupFilePath);
+        } catch (error) {
+          // 如果旧文件不存在或重命名失败，记录警告但不影响更新流程
+          console.warn('重命名旧笔记文件失败:', error);
+        }
+      }
 
       // 更新索引
       await updateNoteIndex(note, newFilePath);

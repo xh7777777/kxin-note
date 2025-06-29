@@ -161,4 +161,5 @@ export class IpcChannelRendererClass {
    */
   EditorUndo: IpcRendererEventListener = null;
   EditorRedo: IpcRendererEventListener = null;
+  EditorSave: IpcRendererEventListener = null;
 }

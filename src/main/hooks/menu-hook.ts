@@ -45,6 +45,16 @@ const menu: Array<MenuItemConstructorOptions | MenuItem> = [
         },
       },
       {
+        label: '保存',
+        accelerator: 'CmdOrCtrl+S',
+        click: () => {
+          const focusedWindow = BrowserWindow.getFocusedWindow();
+          if (focusedWindow) {
+            webContentSend.EditorSave(focusedWindow.webContents);
+          }
+        },
+      },
+      {
         type: 'separator',
       },
       {

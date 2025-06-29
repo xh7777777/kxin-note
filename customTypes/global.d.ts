@@ -99,6 +99,10 @@ declare global {
        */
       onRedo: (callback: () => void) => () => void;
       /**
+       * 监听保存操作
+       */
+      onSave: (callback: (content: string) => void) => () => void;
+      /**
        * 移除所有编辑器监听器
        */
       removeAllListeners: () => void;

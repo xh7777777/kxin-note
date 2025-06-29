@@ -129,6 +129,7 @@ import AIChatView from '../../components/AIChatView.vue';
 import PopMessage from '../../components/PopMessage.vue';
 import { useMessage } from '../../hooks/useMessage';
 import { useNotes } from '../../hooks/useNotes';
+import { eventBus, EventBusKey } from '../../utils/eventBus';
 
 const { warning, info, success } = useMessage();
 
@@ -136,8 +137,14 @@ const { warning, info, success } = useMessage();
 const searchQuery = ref('');
 const sidebarCollapsed = ref(false);
 const chatVisible = ref(false);
-const { getNotesList, createNote, sideBarNotes, state, getNoteById } =
-  useNotes();
+const {
+  getNotesList,
+  createNote,
+  sideBarNotes,
+  state,
+  getNoteById,
+  updateNote,
+} = useNotes();
 // 快捷键处理
 const handleKeyDown = (event: any) => {
   if ((event.ctrlKey || event.metaKey) && event.key === 'l') {
@@ -150,11 +157,6 @@ const handleKeyDown = (event: any) => {
 const toggleChat = () => {
   chatVisible.value = !chatVisible.value;
 };
-
-onMounted(async () => {
-  const notes = await getNotesList(true);
-  console.log('notes', notes);
-});
 
 const addNote = async () => {
   const response = await createNote({});
@@ -200,6 +202,31 @@ const openTrash = () => {
   info('垃圾桶功能', '垃圾桶功能正在开发中');
   // 这里可以显示已删除的笔记列表
 };
+
+const handleEditorSave = async (newContent: string) => {
+  console.log('handleEditorSave', newContent, state.currentNote);
+  if (!state.currentNote) {
+    return;
+  }
+  const response = await updateNote({
+    id: state.currentNote.id,
+    metadata: {
+      content: newContent,
+    },
+    updateSearchIndex: true,
+  });
+  console.log('response', response);
+};
+
+onMounted(async () => {
+  const notes = await getNotesList(true);
+  console.log('notes', notes);
+  eventBus.on(EventBusKey.EditorSave, handleEditorSave);
+});
+
+onUnmounted(() => {
+  eventBus.off(EventBusKey.EditorSave, handleEditorSave);
+});
 </script>
 
 <style scoped>
