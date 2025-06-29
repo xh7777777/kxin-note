@@ -108,8 +108,8 @@ const {
   containerRef,
   init,
   clear,
-  registerKeyDownEvent,
-  unregisterKeyDownEvent,
+  registerIpcListeners,
+  unregisterIpcListeners,
 } = useMuya();
 
 const props = defineProps<{
@@ -188,13 +188,13 @@ const handleUpdateNoteItem = (noteId: string, key: string, value: any) => {
 
 onMounted(() => {
   init(props.currentNote.metadata.content || '');
-  registerKeyDownEvent();
+  registerIpcListeners();
 });
 
 onUnmounted(async () => {
   // TODO: 保存笔记, 记录到最近打开队列中
   console.log('onUnmounted');
-  unregisterKeyDownEvent();
+  unregisterIpcListeners();
 });
 
 defineExpose({});

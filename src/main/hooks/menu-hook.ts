@@ -1,8 +1,9 @@
 // 这里是定义菜单的地方，详情请查看 https://electronjs.org/docs/api/menu
-import { dialog, Menu } from 'electron';
+import { dialog, Menu, BrowserWindow } from 'electron';
 import type { MenuItemConstructorOptions, MenuItem } from 'electron';
 import { type, arch, release } from 'os';
 import { version } from '../../../package.json';
+import { webContentSend } from '../services/web-content-send';
 
 const menu: Array<MenuItemConstructorOptions | MenuItem> = [
   {
@@ -26,12 +27,22 @@ const menu: Array<MenuItemConstructorOptions | MenuItem> = [
       {
         label: '撤销',
         accelerator: 'CmdOrCtrl+Z',
-        role: 'undo',
+        click: () => {
+          const focusedWindow = BrowserWindow.getFocusedWindow();
+          if (focusedWindow) {
+            webContentSend.EditorUndo(focusedWindow.webContents);
+          }
+        },
       },
       {
         label: '重做',
         accelerator: 'Shift+CmdOrCtrl+Z',
-        role: 'redo',
+        click: () => {
+          const focusedWindow = BrowserWindow.getFocusedWindow();
+          if (focusedWindow) {
+            webContentSend.EditorRedo(focusedWindow.webContents);
+          }
+        },
       },
       {
         type: 'separator',

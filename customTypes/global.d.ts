@@ -86,6 +86,24 @@ declare global {
      */
     noteAPI: NoteAPI;
 
+    /**
+     * 编辑器操作API
+     */
+    editorAPI: {
+      /**
+       * 监听撤销操作
+       */
+      onUndo: (callback: () => void) => () => void;
+      /**
+       * 监听重做操作
+       */
+      onRedo: (callback: () => void) => () => void;
+      /**
+       * 移除所有编辑器监听器
+       */
+      removeAllListeners: () => void;
+    };
+
     systemInfo: {
       platform: string;
       release: string;

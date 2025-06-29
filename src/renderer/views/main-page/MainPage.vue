@@ -136,7 +136,7 @@ const { warning, info, success } = useMessage();
 const searchQuery = ref('');
 const sidebarCollapsed = ref(false);
 const chatVisible = ref(false);
-const { getNotesList, createNote, notes, sideBarNotes, state, getNoteById } =
+const { getNotesList, createNote, sideBarNotes, state, getNoteById } =
   useNotes();
 // 快捷键处理
 const handleKeyDown = (event: any) => {

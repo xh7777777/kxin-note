@@ -27,10 +27,6 @@ interface NotesState {
 interface UseNotesReturn {
   // 状态
   state: NotesState;
-  loading: Ref<boolean>;
-  error: Ref<string | null>;
-  currentNote: Ref<INote | null>;
-  notes: Ref<INote[]>;
   sideBarNotes: Ref<NoteIndexEntry[]>;
   // 计算属性
   hasNotes: Readonly<Ref<boolean>>;
@@ -57,16 +53,11 @@ function useNotes(): UseNotesReturn {
     notes: [],
   });
 
-  // 响应式引用
-  const loading = ref(false);
-  const error = ref<string | null>(null);
-  const currentNote = ref<INote | null>(null);
-  const notes = ref<INote[]>([]);
   const sideBarNotes = ref<NoteIndexEntry[]>([]);
 
   // 计算属性
-  const hasNotes = computed(() => notes.value.length > 0);
-  const notesCount = computed(() => notes.value.length);
+  const hasNotes = computed(() => state.notes.length > 0);
+  const notesCount = computed(() => state.notes.length);
 
   /**
    * 获取笔记列表
@@ -90,11 +81,6 @@ function useNotes(): UseNotesReturn {
    */
   function updateState(updates: Partial<NotesState>) {
     Object.assign(state, updates);
-    if (updates.loading !== undefined) loading.value = updates.loading;
-    if (updates.error !== undefined) error.value = updates.error;
-    if (updates.currentNote !== undefined)
-      currentNote.value = updates.currentNote;
-    if (updates.notes !== undefined) notes.value = updates.notes;
   }
 
   /**
@@ -125,7 +111,7 @@ function useNotes(): UseNotesReturn {
 
       if (response.success && response.data) {
         // 更新本地状态
-        const newNotes = [...notes.value, response.data];
+        const newNotes = [...state.notes, response.data];
         updateState({
           notes: newNotes,
           loading: false,
@@ -152,7 +138,7 @@ function useNotes(): UseNotesReturn {
 
     try {
       // 先检查本地缓存
-      const cachedNote = notes.value.find(note => note.id === id);
+      const cachedNote = state.notes.find(note => note.id === id);
       if (cachedNote) {
         updateState({
           currentNote: cachedNote,
@@ -175,9 +161,9 @@ function useNotes(): UseNotesReturn {
         });
 
         // 如果这个笔记不在列表中，添加到列表
-        const noteExists = notes.value.some(note => note.id === id);
+        const noteExists = state.notes.some(note => note.id === id);
         if (!noteExists) {
-          const newNotes = [...notes.value, response.data];
+          const newNotes = [...state.notes, response.data];
           updateState({ notes: newNotes });
         }
 
@@ -208,7 +194,7 @@ function useNotes(): UseNotesReturn {
 
       if (response.success && response.data) {
         // 更新本地状态
-        const updatedNotes = notes.value.map(note =>
+        const updatedNotes = state.notes.map(note =>
           note.id === request.id ? response.data! : note
         );
 
@@ -218,7 +204,7 @@ function useNotes(): UseNotesReturn {
         });
 
         // 如果是当前笔记，也更新当前笔记
-        if (currentNote.value?.id === request.id) {
+        if (state.currentNote?.id === request.id) {
           updateState({ currentNote: response.data });
         }
       } else {
@@ -265,10 +251,6 @@ function useNotes(): UseNotesReturn {
   return {
     // 状态
     state,
-    loading,
-    error,
-    currentNote,
-    notes,
     sideBarNotes,
 
     // 计算属性

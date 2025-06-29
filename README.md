@@ -1,61 +1,96 @@
-# electron-vite-template
+## 🏗️ 核心架构功能
 
-![GitHub Repo stars](https://img.shields.io/github/stars/umbrella22/electron-vite-template)
-[![vue](https://img.shields.io/badge/vue-3.4.21-brightgreen.svg)](https://github.com/vuejs/vue-next)
-[![vite](https://img.shields.io/badge/vite-5.2.7-brightgreen.svg)](https://github.com/vitejs/vite)
-[![element-ui](https://img.shields.io/badge/element-plus-brightgreen.svg)](https://www.npmjs.org/package/element-plus)
-[![electron](https://img.shields.io/badge/electron-29.1.6-brightgreen.svg)](https://github.com/electron/electron)
-[![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/umbrella22/electron-vite-template/blob/master/LICENSE)
+### 1. **应用框架**
 
-# Installation
+- ✅ Electron 桌面应用程序基础框架
+- ✅ Vue3 + Composition API 渲染进程
+- ✅ TypeScript 类型安全
+- ✅ Vite 构建工具集成
+- ✅ 主进程与渲染进程 IPC 通信
 
-You can choose to clone the project or fork repository, or download the zip file directly. It is recommended to clone the repository so that you can receive the latest patches.
+### 2. **窗口管理**
 
-To run a project, you need to have **node version 20** or higher and **use npm as your dependency management tool**
+- ✅ 主窗口创建和管理
+- ✅ 窗口状态控制（最小化、最大化、关闭）
+- ✅ 自定义标题栏支持
+- ✅ 热重载开发环境
 
-[Document (Chinese only)](https://umbrella22.github.io/electron-vue-template-doc/)
+## 📝 笔记核心功能
 
-[For Chinese Developers](/README_ZH.md)
+### 3. **笔记管理系统**
 
-[![Build TEST](https://github.com/umbrella22/electron-vite-template/actions/workflows/Build.yml/badge.svg)](https://github.com/umbrella22/electron-vite-template/actions/workflows/Build.yml)
+- ✅ 创建新笔记 (`createNote`)
+- ✅ 按ID获取笔记 (`getNoteById`)
+- ✅ 更新笔记内容 (`updateNote`)
+- ✅ 删除笔记 (`deleteNote`)
+- ✅ 笔记列表显示 (`getNotesList`)
+- ✅ 笔记索引系统和重建功能
 
-# Build Setup
+### 4. **笔记编辑器**
 
-```bash
-# Clone this repository
-$ git clone https://github.com/umbrella22/electron-vite-template.git
-# Go into the repository
-$ cd electron-vite-template
-# install dependencies
-$ npm install
+- ✅ **Muya** 编辑器支持
+- ✅ 多种编辑器插件：
+  - 标题、段落、列表
+  - 代码块、引用
+  - 分隔线、附件上传
+  - 行内代码、撤销功能
 
-# serve with hot reload at localhost:9080
-$ npm run dev
+### 5. **笔记元数据**
 
-# build electron application for production
-$ npm run build
+- ✅ 标题、摘要、图标设置
+- ✅ 封面图片、标签系统
+- ✅ 创建/更新时间戳
+- ✅ 字数统计
+- ✅ 收藏、归档、置顶状态管理
 
+## 🎨 界面交互功能
 
-```
+### 6. **侧边栏导航**
 
----
+- ✅ 可收缩/展开侧边栏 (`Ctrl+/`)
+- ✅ 笔记搜索功能
+- ✅ 功能区域分类（Home、Pageshelf）
+- ✅ 笔记本管理和新建按钮
+- ✅ 黑暗模式切换（开发中）
+- ✅ 设置面板（开发中）
 
-# Function list
+### 7. **AI 聊天助手**
 
-[x] Auto update
-[x] Incremental update
-[x] Loading animation before startup
-[x] i18n
+- ✅ 右侧 AI 聊天面板
+- ✅ 快捷键唤起 (`Ctrl+L`)
+- ✅ 浮动聊天按钮
+- ✅ 聊天界面组件 (`AIChatView`)
 
-# Built-in
+### 8. **消息提示系统**
 
-- [vue-router](https://next.router.vuejs.org/index.html)
-- [pinia](https://pinia.esm.dev/)
-- [electron](http://www.electronjs.org/docs)
-- electron-updater
-- typescript
+- ✅ 全局消息提示组件 (`PopMessage`)
+- ✅ 成功、警告、信息类型消息
+- ✅ 用户操作反馈
 
-# Note
+## 🛠️ 系统集成功能
 
-- [gitee](https://gitee.com/Zh-Sky/electron-vite-template) is only for domestic users to pull code，from github to synchronize，please visit github for PR
-- **Welcome to Issues and PR**
+### 9. **文件操作**
+
+- ✅ 本地文件存储管理
+- ✅ 笔记数据持久化
+- ✅ 文件上传和下载
+- ✅ 剪贴板操作
+
+### 10. **应用更新**
+
+- ✅ 自动更新检查 (`check-update.ts`)
+- ✅ 热更新支持 (`hot-updater.ts`)
+- ✅ 版本管理
+
+### 11. **开发工具**
+
+- ✅ Jest 单元测试框架
+- ✅ ESLint 代码规范检查
+- ✅ Prettier 代码格式化
+- ✅ TypeScript 类型检查
+
+## 🎯 快捷键
+
+- `Ctrl+/` - 切换侧边栏显示/隐藏
+- `Ctrl+L` - 打开 AI 助手
+- `Ctrl+K` - 打开 AI 浮窗（计划中）

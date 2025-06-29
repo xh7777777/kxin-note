@@ -155,4 +155,10 @@ export class IpcChannelRendererClass {
     status: string;
     message: string;
   }> = null;
+
+  /**
+   * 编辑器操作事件
+   */
+  EditorUndo: IpcRendererEventListener = null;
+  EditorRedo: IpcRendererEventListener = null;
 }

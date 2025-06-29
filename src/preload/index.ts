@@ -94,3 +94,26 @@ contextBridge.exposeInMainWorld('crash', {
     process.crash();
   },
 });
+
+// 暴露编辑器操作API
+contextBridge.exposeInMainWorld('editorAPI', {
+  // 监听撤销操作
+  onUndo: (callback: () => void) => {
+    const wrappedCallback = () => callback();
+    ipcRenderer.on('EditorUndo', wrappedCallback);
+    return () => ipcRenderer.removeListener('EditorUndo', wrappedCallback);
+  },
+
+  // 监听重做操作
+  onRedo: (callback: () => void) => {
+    const wrappedCallback = () => callback();
+    ipcRenderer.on('EditorRedo', wrappedCallback);
+    return () => ipcRenderer.removeListener('EditorRedo', wrappedCallback);
+  },
+
+  // 移除所有编辑器监听器
+  removeAllListeners: () => {
+    ipcRenderer.removeAllListeners('EditorUndo');
+    ipcRenderer.removeAllListeners('EditorRedo');
+  },
+});
