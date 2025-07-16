@@ -46,6 +46,9 @@ contextBridge.exposeInMainWorld('noteAPI', {
   updateNote: (request: any) => ipcRenderer.invoke('updateNote', request),
   getNotesDirectory: () => ipcRenderer.invoke('getNotesDirectory'),
   getNotesList: () => ipcRenderer.invoke('getNotesList'),
+  deleteNote: (id: string) => ipcRenderer.invoke('deleteNote', id),
+  permanentlyDeleteNote: (id: string) =>
+    ipcRenderer.invoke('permanentlyDeleteNote', id),
 });
 
 // 暴露文件操作API

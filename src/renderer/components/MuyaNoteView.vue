@@ -23,13 +23,6 @@
           class="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50"
         >
           <button
-            @click="handleMenuAction('copy-link')"
-            class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2"
-          >
-            <Link class="w-4 h-4" />
-            拷贝链接
-          </button>
-          <button
             @click="handleMenuAction('move-to')"
             class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2"
           >
@@ -44,13 +37,6 @@
             移至垃圾桶
           </button>
           <button
-            @click="handleMenuAction('edit-suggestion')"
-            class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2"
-          >
-            <Edit class="w-4 h-4" />
-            编辑建议
-          </button>
-          <button
             @click="handleMenuAction('translate')"
             class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2"
           >
@@ -59,18 +45,18 @@
           </button>
           <div class="border-t border-gray-100 my-1"></div>
           <button
-            @click="handleMenuAction('import')"
-            class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2"
-          >
-            <Upload class="w-4 h-4" />
-            导入
-          </button>
-          <button
-            @click="handleMenuAction('export')"
+            @click="handleMenuAction('export-markdown')"
             class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2"
           >
             <Download class="w-4 h-4" />
-            导出
+            导出为Markdown
+          </button>
+          <button
+            @click="handleMenuAction('export-html')"
+            class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2"
+          >
+            <Download class="w-4 h-4" />
+            导出为HTML
           </button>
         </div>
       </div>
@@ -158,7 +144,7 @@ const handleExport = (format: 'markdown' | 'html' | 'pdf') => {
 const handleMenuAction = (action: string) => {
   switch (action) {
     case 'move-to-trash':
-      //   emit('move-to-trash', props.noteId);
+      emit('move-to-trash', props.currentNote.id);
       break;
     default:
       break;
@@ -182,6 +168,12 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 };
 
+// 滚动时关闭菜单
+const handleScroll = () => {
+  showExportDropdown.value = false;
+  showMoreActions.value = false;
+};
+
 const handleUpdateNoteItem = (noteId: string, key: string, value: any) => {
   emit('update-note-item', noteId, key, value);
 };
@@ -189,12 +181,20 @@ const handleUpdateNoteItem = (noteId: string, key: string, value: any) => {
 onMounted(() => {
   init(props.currentNote.metadata.content || '');
   registerIpcListeners();
+
+  // 添加点击外部和滚动事件监听器
+  document.addEventListener('click', handleClickOutside);
+  document.addEventListener('scroll', handleScroll, true); // 使用捕获模式监听所有滚动事件
 });
 
 onUnmounted(async () => {
   // TODO: 保存笔记, 记录到最近打开队列中
   console.log('onUnmounted');
   unregisterIpcListeners();
+
+  // 移除事件监听器
+  document.removeEventListener('click', handleClickOutside);
+  document.removeEventListener('scroll', handleScroll, true);
 });
 
 defineExpose({});

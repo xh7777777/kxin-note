@@ -42,6 +42,7 @@ interface UseNotesReturn {
   getNotesList: (
     updateList: boolean
   ) => Promise<NoteAPIResponse<NoteIndexEntry[]>>;
+  moveToTrash: (noteId: string) => Promise<NoteAPIResponse<Boolean>>;
 }
 
 function useNotes(): UseNotesReturn {
@@ -248,6 +249,15 @@ function useNotes(): UseNotesReturn {
     }
   }
 
+  /**
+   * 将笔记移到垃圾桶
+   */
+  async function moveToTrash(noteId: string) {
+    console.log('moveToTrash', window.noteAPI);
+    const response = await window.noteAPI.deleteNote(noteId);
+    return response;
+  }
+
   return {
     // 状态
     state,
@@ -265,7 +275,9 @@ function useNotes(): UseNotesReturn {
     clearError,
     refreshNotes,
     getNotesList,
+    moveToTrash,
   };
 }
 
 export { useNotes };
+export type { UseNotesReturn };

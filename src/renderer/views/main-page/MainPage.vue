@@ -76,6 +76,9 @@
         <MuyaNoteView
           :current-note="state.currentNote"
           :key="state.currentNote?.id"
+          @update-note-item="handleUpdateNoteItem"
+          @delete-note="handleMoveToTrash"
+          @move-to-trash="handleMoveToTrash"
         />
       </div>
     </div>
@@ -129,22 +132,29 @@ import AIChatView from '../../components/AIChatView.vue';
 import PopMessage from '../../components/PopMessage.vue';
 import { useMessage } from '../../hooks/useMessage';
 import { useNotes } from '../../hooks/useNotes';
+import { useNoteActions } from '../../hooks/useNoteActions';
 import { eventBus, EventBusKey } from '../../utils/eventBus';
 
-const { warning, info, success } = useMessage();
+const { warning, info } = useMessage();
 
 // 响应式数据
 const searchQuery = ref('');
 const sidebarCollapsed = ref(false);
 const chatVisible = ref(false);
+
+// 基础笔记状态管理
+const notesInstance = useNotes();
+const { getNotesList, sideBarNotes, state } = notesInstance;
+
+// 组合操作方法
 const {
-  getNotesList,
-  createNote,
-  sideBarNotes,
-  state,
-  getNoteById,
-  updateNote,
-} = useNotes();
+  addNoteAndRefresh,
+  selectNoteById,
+  updateNoteItem,
+  moveNoteToTrash,
+  saveEditorContent,
+} = useNoteActions(notesInstance);
+
 // 快捷键处理
 const handleKeyDown = (event: any) => {
   if ((event.ctrlKey || event.metaKey) && event.key === 'l') {
@@ -158,74 +168,47 @@ const toggleChat = () => {
   chatVisible.value = !chatVisible.value;
 };
 
-const addNote = async () => {
-  const response = await createNote({});
-  console.log('response', response);
-  const notes = await getNotesList(true);
-  console.log('notes', notes);
-};
+// 使用组合方法替换原有实现
+const addNote = () => addNoteAndRefresh();
+const handleSelectNote = (noteId: string) => selectNoteById(noteId);
+const handleUpdateNoteItem = (noteId: string, key: string, value: any) =>
+  updateNoteItem(noteId, key, value);
+const handleMoveToTrash = (noteId: string) => moveNoteToTrash(noteId);
+const handleEditorSave = (newContent: string) => saveEditorContent(newContent);
 
-const handleSelectNote = async (noteId: string) => {
-  const note = await getNoteById(noteId);
-  console.log('note', note);
-};
-
+// UI 相关方法保持不变
 const handleSidebarCollapse = (collapsed: boolean) => {
   sidebarCollapsed.value = collapsed;
-};
-
-const handleUpdateNoteItem = async (
-  noteId: string,
-  key: string,
-  value: any
-) => {};
-
-const handleMoveToTrash = async (noteId: string) => {
-  console.log('handleMoveToTrash', noteId);
 };
 
 const toggleDarkMode = () => {
   console.log('切换黑暗模式');
   info('功能开发中', '黑暗模式功能正在开发中');
-  // 这里可以实现全局的黑暗模式切换逻辑
-  // 例如切换 CSS 类，更新 Pinia store 等
 };
 
 const openSettings = () => {
   console.log('打开设置');
   warning('功能开发中', '设置功能正在开发中');
-  // 这里可以打开设置模态框或跳转到设置页面
 };
 
 const openTrash = () => {
   console.log('打开垃圾桶');
   info('垃圾桶功能', '垃圾桶功能正在开发中');
-  // 这里可以显示已删除的笔记列表
-};
-
-const handleEditorSave = async (newContent: string) => {
-  console.log('handleEditorSave', newContent, state.currentNote);
-  if (!state.currentNote) {
-    return;
-  }
-  const response = await updateNote({
-    id: state.currentNote.id,
-    metadata: {
-      content: newContent,
-    },
-    updateSearchIndex: true,
-  });
-  console.log('response', response);
 };
 
 onMounted(async () => {
-  const notes = await getNotesList(true);
-  console.log('notes', notes);
+  // 初始化加载笔记列表
+  await getNotesList(true);
+
+  // 注册事件监听器
   eventBus.on(EventBusKey.EditorSave, handleEditorSave);
+  document.addEventListener('keydown', handleKeyDown);
 });
 
 onUnmounted(() => {
+  // 清理事件监听器
   eventBus.off(EventBusKey.EditorSave, handleEditorSave);
+  document.removeEventListener('keydown', handleKeyDown);
 });
 </script>
 
