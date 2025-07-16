@@ -421,6 +421,12 @@ const handleSelectNotePage = (notePageId: string) => {
 };
 
 const handleAddNote = () => {
+  if (!notePagesExpanded.value) {
+    notePagesExpanded.value = true;
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem('sidebar-notePages-expanded', 'true');
+    }
+  }
   emit('add-note');
 };
 

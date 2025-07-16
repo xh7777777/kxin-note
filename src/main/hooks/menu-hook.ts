@@ -54,6 +54,17 @@ const menu: Array<MenuItemConstructorOptions | MenuItem> = [
           }
         },
       },
+      // 搜索
+      {
+        label: '搜索',
+        accelerator: 'CmdOrCtrl+F',
+        click: () => {
+          const focusedWindow = BrowserWindow.getFocusedWindow();
+          if (focusedWindow) {
+            webContentSend.Search(focusedWindow.webContents);
+          }
+        },
+      },
       {
         type: 'separator',
       },

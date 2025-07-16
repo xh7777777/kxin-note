@@ -121,6 +121,13 @@ contextBridge.exposeInMainWorld('editorAPI', {
     return () => ipcRenderer.removeListener('EditorSave', wrappedCallback);
   },
 
+  // 监听搜索操作
+  onSearch: (callback: () => void) => {
+    const wrappedCallback = () => callback();
+    ipcRenderer.on('Search', wrappedCallback);
+    return () => ipcRenderer.removeListener('Search', wrappedCallback);
+  },
+
   // 移除所有编辑器监听器
   removeAllListeners: () => {
     ipcRenderer.removeAllListeners('EditorUndo');
