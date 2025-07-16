@@ -79,6 +79,10 @@
           @update-note-item="handleUpdateNoteItem"
           @delete-note="handleMoveToTrash"
           @move-to-trash="handleMoveToTrash"
+          @move-to="handleMoveTo"
+          @translate="handleTranslate"
+          @export-markdown="handleExportMarkdown"
+          @export-html="handleExportHtml"
         />
       </div>
     </div>
@@ -175,6 +179,27 @@ const handleUpdateNoteItem = (noteId: string, key: string, value: any) =>
   updateNoteItem(noteId, key, value);
 const handleMoveToTrash = (noteId: string) => moveNoteToTrash(noteId);
 const handleEditorSave = (newContent: string) => saveEditorContent(newContent);
+
+// 处理NoteActionHeader组件的事件
+const handleMoveTo = (noteId: string) => {
+  console.log('移动笔记到:', noteId);
+  info('功能开发中', '移动笔记功能正在开发中');
+};
+
+const handleTranslate = (noteId: string) => {
+  console.log('翻译笔记:', noteId);
+  info('功能开发中', '翻译功能正在开发中');
+};
+
+const handleExportMarkdown = (noteId: string) => {
+  console.log('导出为Markdown:', noteId);
+  info('功能开发中', '导出为Markdown功能正在开发中');
+};
+
+const handleExportHtml = (noteId: string) => {
+  console.log('导出为HTML:', noteId);
+  info('功能开发中', '导出为HTML功能正在开发中');
+};
 
 // UI 相关方法保持不变
 const handleSidebarCollapse = (collapsed: boolean) => {
