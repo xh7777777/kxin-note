@@ -10,7 +10,7 @@
     <button
       v-show="showExpandButton"
       @click="handleToggleCollapse"
-      class="flex items-center justify-center w-8 h-8 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-md transition-all duration-200 shadow-lg hover:shadow-xl backdrop-blur-sm bg-opacity-90"
+      class="flex items-center justify-center w-8 h-8 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-md transition-all duration-200 shadow-lg hover:shadow-xl backdrop-blur-sm opacity-90"
     >
       <svg
         class="w-4 h-4 stroke-2"
@@ -59,7 +59,7 @@
         <div class="relative group">
           <button
             @click="handleToggleCollapse"
-            class="flex items-center justify-center w-8 h-8 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-md transition-all duration-200 shadow-sm hover:shadow-md"
+            class="flex items-center justify-center w-8 h-8 bg-gray-200 hover:bg-gray-300 text-gray-600 rounded-md transition-all duration-200 shadow-sm hover:shadow-md text-ellipsis-1"
             :title="`Collapse Sidebar (Ctrl+/)`"
           >
             <svg
@@ -231,12 +231,10 @@
                 "
                 @click="handleSelectNotePage(notePage.id)"
               >
-                <div
-                  class="w-5 h-5 rounded flex items-center justify-center text-xs"
-                >
+                <!-- <div class="w-5 h-5 rounded flex justify-center text-xs">
                   {{ notePage.icon }}
-                </div>
-                <span class="text-sm flex-1">
+                </div> -->
+                <span class="text-sm flex-1 text-ellipsis-1">
                   {{ notePage.title || '未命名笔记' }}
                 </span>
               </div>

@@ -2,7 +2,16 @@
   <!-- 操作区 -->
   <div class="w-full h-16 bg-white flex justify-end items-center px-4 gap-2">
     <!-- 更多操作按钮 -->
-    <div class="relative" ref="moreActionsRef">
+    <div
+      class="relative flex items-center gap-2 w-full justify-end"
+      ref="moreActionsRef"
+    >
+      <button
+        @click="handleMenuAction('tag')"
+        class="p-2 text-left hover:bg-gray-50 flex items-center gap-2 rounded-lg"
+      >
+        <Tag class="w-5 h-5" />
+      </button>
       <button
         @click="toggleMoreActions"
         class="p-2 hover:bg-gray-100 rounded-lg transition-colors duration-200 group"
@@ -19,11 +28,11 @@
         class="absolute right-0 top-full mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-50"
       >
         <button
-          @click="handleMenuAction('move-to')"
+          @click="handleMenuAction('rename')"
           class="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2"
         >
-          <ArrowRight class="w-4 h-4" />
-          移动到
+          <Pencil class="w-4 h-4" />
+          重命名
         </button>
         <button
           @click="handleMenuAction('move-to-trash')"
@@ -67,6 +76,8 @@ import {
   Trash,
   Languages,
   Download,
+  Tag,
+  Pencil,
 } from 'lucide-vue-next';
 
 const props = defineProps<{
@@ -79,6 +90,8 @@ const emit = defineEmits<{
   (e: 'translate', noteId: string): void;
   (e: 'export-markdown', noteId: string): void;
   (e: 'export-html', noteId: string): void;
+  (e: 'rename', noteId: string): void;
+  (e: 'tag', noteId: string): void;
 }>();
 
 // 下拉菜单状态
@@ -107,6 +120,12 @@ const handleMenuAction = (action: string) => {
       break;
     case 'export-html':
       emit('export-html', props.noteId);
+      break;
+    case 'rename':
+      emit('rename', props.noteId);
+      break;
+    case 'tag':
+      emit('tag', props.noteId);
       break;
     default:
       break;

@@ -83,6 +83,8 @@
           @translate="handleTranslate"
           @export-markdown="handleExportMarkdown"
           @export-html="handleExportHtml"
+          @rename="handleRename"
+          @tag="handleTag"
         />
       </div>
     </div>
@@ -199,6 +201,18 @@ const handleExportMarkdown = (noteId: string) => {
 const handleExportHtml = (noteId: string) => {
   console.log('导出为HTML:', noteId);
   info('功能开发中', '导出为HTML功能正在开发中');
+};
+
+const handleRename = async (noteId: string, newName: string) => {
+  console.log('重命名笔记:', noteId, '新名称:', newName);
+  // 使用updateNoteItem来更新笔记标题
+  await updateNoteItem(noteId, 'title', newName);
+  await getNotesList(true);
+};
+
+const handleTag = (noteId: string) => {
+  console.log('标签笔记:', noteId);
+  info('功能开发中', '标签功能正在开发中');
 };
 
 // UI 相关方法保持不变

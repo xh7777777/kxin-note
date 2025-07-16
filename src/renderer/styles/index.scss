@@ -113,3 +113,9 @@ button {
     text-align-last: auto !important;
   }
 }
+
+.text-ellipsis-1 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

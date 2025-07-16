@@ -269,7 +269,7 @@ export function useNote(): UseNoteRetrun {
 
       // 构建笔记元数据
       const metadata: INoteMetadata = {
-        title: request.title || '无标题笔记',
+        title: request.title || 'untitled',
         content: request.content || '',
         summary: request.summary,
         tags: request.tags || [],
