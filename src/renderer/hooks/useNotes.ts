@@ -42,7 +42,12 @@ interface UseNotesReturn {
   getNotesList: (
     updateList: boolean
   ) => Promise<NoteAPIResponse<NoteIndexEntry[]>>;
-  moveToTrash: (noteId: string) => Promise<NoteAPIResponse<Boolean>>;
+  getNotesListByFilter: (
+    filter: any
+  ) => Promise<NoteAPIResponse<NoteIndexEntry[]>>;
+  moveToTrash: (noteId: string) => Promise<NoteAPIResponse<INote>>;
+  restoreFromTrash: (noteId: string) => Promise<NoteAPIResponse<INote>>;
+  permanentlyDeleteNote: (noteId: string) => Promise<NoteAPIResponse<boolean>>;
 }
 
 function useNotes(): UseNotesReturn {
@@ -250,11 +255,46 @@ function useNotes(): UseNotesReturn {
   }
 
   /**
+   * 根据筛选条件获取笔记列表
+   */
+  async function getNotesListByFilter(
+    filter: any
+  ): Promise<NoteAPIResponse<NoteIndexEntry[]>> {
+    const response = await window.noteAPI.getNotesListByFilter(filter);
+    if (response.success && response.data) {
+      sideBarNotes.value = response.data;
+    } else {
+      sideBarNotes.value = [];
+    }
+    return response;
+  }
+
+  /**
    * 将笔记移到垃圾桶
    */
-  async function moveToTrash(noteId: string) {
+  async function moveToTrash(noteId: string): Promise<NoteAPIResponse<INote>> {
     console.log('moveToTrash', window.noteAPI);
-    const response = await window.noteAPI.deleteNote(noteId);
+    const response = await window.noteAPI.moveToTrash(noteId);
+    return response;
+  }
+
+  /**
+   * 从垃圾桶恢复笔记
+   */
+  async function restoreFromTrash(
+    noteId: string
+  ): Promise<NoteAPIResponse<INote>> {
+    const response = await window.noteAPI.restoreFromTrash(noteId);
+    return response;
+  }
+
+  /**
+   * 永久删除笔记
+   */
+  async function permanentlyDeleteNote(
+    noteId: string
+  ): Promise<NoteAPIResponse<boolean>> {
+    const response = await window.noteAPI.permanentlyDeleteNote(noteId);
     return response;
   }
 
@@ -275,7 +315,10 @@ function useNotes(): UseNotesReturn {
     clearError,
     refreshNotes,
     getNotesList,
+    getNotesListByFilter,
     moveToTrash,
+    restoreFromTrash,
+    permanentlyDeleteNote,
   };
 }
 

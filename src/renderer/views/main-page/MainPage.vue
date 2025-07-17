@@ -24,7 +24,7 @@
       <!-- 设置面板 -->
       <SettingView v-if="tabManager.setting" @close="handleCloseSettings" />
       <!-- 垃圾桶面板 -->
-      <!-- <TrashView v-if="tabManager.trash" /> -->
+      <TrashView v-if="tabManager.trash" @close="handleCloseTrash" />
       <!-- 没有选中笔记时显示 -->
       <div
         class="w-full h-full rounded-lg shadow-md overflow-hidden flex justify-center items-center bg-white"
@@ -146,6 +146,7 @@ import { useNotes } from '../../hooks/useNotes';
 import { useNoteActions } from '../../hooks/useNoteActions';
 import { eventBus, EventBusKey } from '../../utils/eventBus';
 import SettingView from '../../components/SettingView.vue';
+import TrashView from '../../components/TrashView.vue';
 
 const { warning, info } = useMessage();
 
@@ -251,6 +252,10 @@ const handleCloseSettings = () => {
 const openTrash = () => {
   console.log('打开垃圾桶');
   info('垃圾桶功能', '垃圾桶功能正在开发中');
+};
+
+const handleCloseTrash = () => {
+  tabManager.trash = false;
 };
 
 onMounted(async () => {

@@ -47,14 +47,55 @@ export interface UseNoteRetrun {
   getNotesList: () => Promise<NoteAPIResponse<NoteIndexEntry[]>>;
 
   /**
-   * 删除笔记
+   * 根据筛选条件获取笔记列表
    */
-  deleteNote: (id: string) => Promise<NoteAPIResponse<boolean>>;
+  getNotesListByFilter: (
+    filter: NoteFilter
+  ) => Promise<NoteAPIResponse<NoteIndexEntry[]>>;
+
+  /**
+   * 将笔记移至垃圾桶（软删除）
+   */
+  moveToTrash: (id: string) => Promise<NoteAPIResponse<INote>>;
+
+  /**
+   * 从垃圾桶恢复笔记
+   */
+  restoreFromTrash: (id: string) => Promise<NoteAPIResponse<INote>>;
+
+  /**
+   * 永久删除笔记
+   */
+  permanentlyDeleteNote: (id: string) => Promise<NoteAPIResponse<boolean>>;
 
   /**
    * 重建索引
    */
   rebuildIndex: () => Promise<NoteAPIResponse<boolean>>;
+}
+
+/**
+ * 笔记筛选接口
+ */
+export interface NoteFilter {
+  /** 是否在垃圾桶中 */
+  isTrashed?: boolean;
+  /** 是否收藏 */
+  isFavorite?: boolean;
+  /** 是否归档 */
+  isArchived?: boolean;
+  /** 是否置顶 */
+  isPinned?: boolean;
+  /** 标签筛选 */
+  tags?: string[];
+  /** 关键词搜索 */
+  searchKeyword?: string;
+  /** 创建时间范围 */
+  createdAfter?: string;
+  createdBefore?: string;
+  /** 更新时间范围 */
+  updatedAfter?: string;
+  updatedBefore?: string;
 }
 
 /**
@@ -474,9 +515,99 @@ export function useNote(): UseNoteRetrun {
   }
 
   /**
-   * 删除笔记
+   * 根据筛选条件获取笔记列表
    */
-  async function deleteNote(id: string): Promise<NoteAPIResponse<boolean>> {
+  async function getNotesListByFilter(
+    filter: NoteFilter
+  ): Promise<NoteAPIResponse<NoteIndexEntry[]>> {
+    try {
+      const index = await readIndex();
+      let filteredNotes = [...index.notes];
+
+      // 应用筛选条件
+      if (filter.isTrashed !== undefined) {
+        filteredNotes = filteredNotes.filter(
+          note => note.status.isTrashed === filter.isTrashed
+        );
+      }
+
+      if (filter.isFavorite !== undefined) {
+        filteredNotes = filteredNotes.filter(
+          note => note.status.isFavorite === filter.isFavorite
+        );
+      }
+
+      if (filter.isArchived !== undefined) {
+        filteredNotes = filteredNotes.filter(
+          note => note.status.isArchived === filter.isArchived
+        );
+      }
+
+      if (filter.isPinned !== undefined) {
+        filteredNotes = filteredNotes.filter(
+          note => note.status.isPinned === filter.isPinned
+        );
+      }
+
+      if (filter.tags && filter.tags.length > 0) {
+        filteredNotes = filteredNotes.filter(note =>
+          filter.tags!.some(tag => note.tags.includes(tag))
+        );
+      }
+
+      if (filter.searchKeyword) {
+        const keyword = filter.searchKeyword.toLowerCase();
+        filteredNotes = filteredNotes.filter(
+          note =>
+            note.title.toLowerCase().includes(keyword) ||
+            note.summary?.toLowerCase().includes(keyword) ||
+            note.tags.some(tag => tag.toLowerCase().includes(keyword))
+        );
+      }
+
+      if (filter.createdAfter) {
+        filteredNotes = filteredNotes.filter(
+          note => new Date(note.createdAt) >= new Date(filter.createdAfter!)
+        );
+      }
+
+      if (filter.createdBefore) {
+        filteredNotes = filteredNotes.filter(
+          note => new Date(note.createdAt) <= new Date(filter.createdBefore!)
+        );
+      }
+
+      if (filter.updatedAfter) {
+        filteredNotes = filteredNotes.filter(
+          note => new Date(note.updatedAt) >= new Date(filter.updatedAfter!)
+        );
+      }
+
+      if (filter.updatedBefore) {
+        filteredNotes = filteredNotes.filter(
+          note => new Date(note.updatedAt) <= new Date(filter.updatedBefore!)
+        );
+      }
+
+      return {
+        success: true,
+        data: filteredNotes,
+        message: `成功获取 ${filteredNotes.length} 篇笔记`,
+      };
+    } catch (error) {
+      console.error('获取筛选笔记列表失败:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '获取筛选笔记列表失败',
+        message: '获取筛选笔记列表时发生错误',
+      };
+    }
+  }
+
+  /**
+   * 将笔记移至垃圾桶（软删除）
+   */
+  async function moveToTrash(id: string): Promise<NoteAPIResponse<INote>> {
     try {
       const filePath = await findNoteFile(id);
 
@@ -485,6 +616,121 @@ export function useNote(): UseNoteRetrun {
           success: false,
           error: '笔记不存在',
           message: `未找到ID为 ${id} 的笔记`,
+        };
+      }
+
+      // 读取笔记内容
+      const fileContent = await fs.readFile(filePath, 'utf-8');
+      const note: INote = JSON.parse(fileContent);
+
+      // 更新状态为已删除
+      note.status.isTrashed = true;
+      note.metadata.updatedAt = new Date().toISOString();
+      note.metadata.version += 1;
+
+      // 保存更新后的笔记
+      await fs.writeFile(filePath, JSON.stringify(note, null, 2), 'utf-8');
+
+      // 更新索引
+      await updateNoteIndex(note, filePath);
+
+      return {
+        success: true,
+        data: note,
+        message: '笔记已移至垃圾桶',
+        timestamp: note.metadata.updatedAt,
+      };
+    } catch (error) {
+      console.error('移动笔记到垃圾桶失败:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '移动笔记到垃圾桶失败',
+        message: '移动笔记到垃圾桶时发生错误',
+      };
+    }
+  }
+
+  /**
+   * 从垃圾桶恢复笔记
+   */
+  async function restoreFromTrash(id: string): Promise<NoteAPIResponse<INote>> {
+    try {
+      const filePath = await findNoteFile(id);
+
+      if (!filePath) {
+        return {
+          success: false,
+          error: '笔记不存在',
+          message: `未找到ID为 ${id} 的笔记`,
+        };
+      }
+
+      // 读取笔记内容
+      const fileContent = await fs.readFile(filePath, 'utf-8');
+      const note: INote = JSON.parse(fileContent);
+
+      // 检查是否在垃圾桶中
+      if (!note.status.isTrashed) {
+        return {
+          success: false,
+          error: '笔记不在垃圾桶中',
+          message: '该笔记未被删除，无需恢复',
+        };
+      }
+
+      // 恢复笔记状态
+      note.status.isTrashed = false;
+      note.metadata.updatedAt = new Date().toISOString();
+      note.metadata.version += 1;
+
+      // 保存更新后的笔记
+      await fs.writeFile(filePath, JSON.stringify(note, null, 2), 'utf-8');
+
+      // 更新索引
+      await updateNoteIndex(note, filePath);
+
+      return {
+        success: true,
+        data: note,
+        message: '笔记已从垃圾桶恢复',
+        timestamp: note.metadata.updatedAt,
+      };
+    } catch (error) {
+      console.error('从垃圾桶恢复笔记失败:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '从垃圾桶恢复笔记失败',
+        message: '从垃圾桶恢复笔记时发生错误',
+      };
+    }
+  }
+
+  /**
+   * 永久删除笔记
+   */
+  async function permanentlyDeleteNote(
+    id: string
+  ): Promise<NoteAPIResponse<boolean>> {
+    try {
+      const filePath = await findNoteFile(id);
+
+      if (!filePath) {
+        return {
+          success: false,
+          error: '笔记不存在',
+          message: `未找到ID为 ${id} 的笔记`,
+        };
+      }
+
+      // 读取笔记内容检查是否在垃圾桶中
+      const fileContent = await fs.readFile(filePath, 'utf-8');
+      const note: INote = JSON.parse(fileContent);
+
+      if (!note.status.isTrashed) {
+        return {
+          success: false,
+          error: '笔记未在垃圾桶中',
+          message: '只能永久删除垃圾桶中的笔记',
         };
       }
 
@@ -497,14 +743,14 @@ export function useNote(): UseNoteRetrun {
       return {
         success: true,
         data: true,
-        message: '笔记删除成功',
+        message: '笔记已永久删除',
       };
     } catch (error) {
-      console.error('删除笔记失败:', error);
+      console.error('永久删除笔记失败:', error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : '删除笔记失败',
-        message: '删除笔记时发生错误',
+        error: error instanceof Error ? error.message : '永久删除笔记失败',
+        message: '永久删除笔记时发生错误',
       };
     }
   }
@@ -585,7 +831,10 @@ export function useNote(): UseNoteRetrun {
     updateNote,
     getNotesDirectory,
     getNotesList,
-    deleteNote,
+    getNotesListByFilter,
+    moveToTrash,
+    restoreFromTrash,
+    permanentlyDeleteNote,
     rebuildIndex,
   };
 }
@@ -597,7 +846,10 @@ export function registerNoteActionHandlers() {
     updateNote,
     getNotesDirectory,
     getNotesList,
-    deleteNote,
+    getNotesListByFilter,
+    moveToTrash,
+    restoreFromTrash,
+    permanentlyDeleteNote,
     rebuildIndex,
   } = useNote();
 
@@ -616,8 +868,17 @@ export function registerNoteActionHandlers() {
   ipcMain.handle('getNotesList', async (event: any) => {
     return await getNotesList();
   });
-  ipcMain.handle('deleteNote', async (event, id: string) => {
-    return await deleteNote(id);
+  ipcMain.handle('getNotesListByFilter', async (event, filter: NoteFilter) => {
+    return await getNotesListByFilter(filter);
+  });
+  ipcMain.handle('moveToTrash', async (event, id: string) => {
+    return await moveToTrash(id);
+  });
+  ipcMain.handle('restoreFromTrash', async (event, id: string) => {
+    return await restoreFromTrash(id);
+  });
+  ipcMain.handle('permanentlyDeleteNote', async (event, id: string) => {
+    return await permanentlyDeleteNote(id);
   });
   ipcMain.handle('rebuildIndex', async (event: any) => {
     return await rebuildIndex();

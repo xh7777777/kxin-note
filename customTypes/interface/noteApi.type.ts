@@ -172,6 +172,30 @@ export interface UpdateSearchIndexRequest {
 }
 
 /**
+ * 笔记筛选接口
+ */
+export interface NoteFilter {
+  /** 是否在垃圾桶中 */
+  isTrashed?: boolean;
+  /** 是否收藏 */
+  isFavorite?: boolean;
+  /** 是否归档 */
+  isArchived?: boolean;
+  /** 是否置顶 */
+  isPinned?: boolean;
+  /** 标签筛选 */
+  tags?: string[];
+  /** 关键词搜索 */
+  searchKeyword?: string;
+  /** 创建时间范围 */
+  createdAfter?: string;
+  createdBefore?: string;
+  /** 更新时间范围 */
+  updatedAfter?: string;
+  updatedBefore?: string;
+}
+
+/**
  * 笔记API接口
  */
 export interface NoteAPI {
@@ -394,6 +418,13 @@ export interface NoteAPI {
     pageSize?: number
   ): Promise<NoteAPIResponse<SearchResponse>>;
 
+  /**
+   * 根据筛选条件获取笔记列表
+   */
+  getNotesListByFilter: (
+    filter: NoteFilter
+  ) => Promise<NoteAPIResponse<NoteIndexEntry[]>>;
+
   // 统计和分析
   /**
    * 获取笔记统计信息
@@ -438,4 +469,14 @@ export interface NoteAPI {
    * 获取笔记列表
    */
   getNotesList(): Promise<NoteAPIResponse<NoteIndexEntry[]>>;
+
+  /**
+   * 获取笔记存储目录
+   */
+  getNotesDirectory: () => Promise<string>;
+
+  /**
+   * 重建索引
+   */
+  rebuildIndex: () => Promise<NoteAPIResponse<boolean>>;
 }

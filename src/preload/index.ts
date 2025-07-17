@@ -46,9 +46,13 @@ contextBridge.exposeInMainWorld('noteAPI', {
   updateNote: (request: any) => ipcRenderer.invoke('updateNote', request),
   getNotesDirectory: () => ipcRenderer.invoke('getNotesDirectory'),
   getNotesList: () => ipcRenderer.invoke('getNotesList'),
-  deleteNote: (id: string) => ipcRenderer.invoke('deleteNote', id),
+  getNotesListByFilter: (filter: any) =>
+    ipcRenderer.invoke('getNotesListByFilter', filter),
+  moveToTrash: (id: string) => ipcRenderer.invoke('moveToTrash', id),
+  restoreFromTrash: (id: string) => ipcRenderer.invoke('restoreFromTrash', id),
   permanentlyDeleteNote: (id: string) =>
     ipcRenderer.invoke('permanentlyDeleteNote', id),
+  rebuildIndex: () => ipcRenderer.invoke('rebuildIndex'),
 });
 
 // 暴露文件操作API
