@@ -29,6 +29,7 @@ UI and Styling
 
 - Use Tailwind for components and styling.
 - Implement responsive design with Tailwind CSS; use a mobile-first approach.
+- The main color is indigo and secondary is gray
 
 Performance Optimization
 

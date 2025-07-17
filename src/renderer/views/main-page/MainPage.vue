@@ -22,7 +22,7 @@
       ]"
     >
       <!-- 设置面板 -->
-      <SettingView v-if="tabManager.setting" />
+      <SettingView v-if="tabManager.setting" @close="handleCloseSettings" />
       <!-- 垃圾桶面板 -->
       <!-- <TrashView v-if="tabManager.trash" /> -->
       <!-- 没有选中笔记时显示 -->
@@ -242,6 +242,10 @@ const toggleDarkMode = () => {
 
 const openSettings = () => {
   tabManager.setting = true;
+};
+
+const handleCloseSettings = () => {
+  tabManager.setting = false;
 };
 
 const openTrash = () => {
