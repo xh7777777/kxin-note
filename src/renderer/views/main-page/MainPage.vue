@@ -21,11 +21,15 @@
         chatVisible ? (sidebarCollapsed ? 'mr-[300px]' : 'mr-[300px]') : '',
       ]"
     >
+      <!-- 设置面板 -->
+      <SettingView v-if="tabManager.setting" />
+      <!-- 垃圾桶面板 -->
+      <!-- <TrashView v-if="tabManager.trash" /> -->
+      <!-- 没有选中笔记时显示 -->
       <div
         class="w-full h-full rounded-lg shadow-md overflow-hidden flex justify-center items-center bg-white"
-        v-if="!state.currentNote"
+        v-if="!state.currentNote && !anyTabVisible"
       >
-        <!-- 没有选中笔记时显示 -->
         <div class="text-center max-w-xs">
           <div class="text-center">
             <svg
@@ -69,9 +73,10 @@
           </div>
         </div>
       </div>
+      <!-- 笔记内容 -->
       <div
         class="h-full w-full rounded-lg shadow-md overflow-hidden relative"
-        v-else
+        v-else-if="!anyTabVisible"
       >
         <MuyaNoteView
           :current-note="state.currentNote"
@@ -131,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, reactive, computed } from 'vue';
 import SideBar from '../../components/SideBar.vue';
 import MuyaNoteView from '../../components/MuyaNoteView.vue';
 import AIChatView from '../../components/AIChatView.vue';
@@ -140,6 +145,7 @@ import { useMessage } from '../../hooks/useMessage';
 import { useNotes } from '../../hooks/useNotes';
 import { useNoteActions } from '../../hooks/useNoteActions';
 import { eventBus, EventBusKey } from '../../utils/eventBus';
+import SettingView from '../../components/SettingView.vue';
 
 const { warning, info } = useMessage();
 
@@ -147,6 +153,10 @@ const { warning, info } = useMessage();
 const searchQuery = ref('');
 const sidebarCollapsed = ref(false);
 const chatVisible = ref(false);
+const tabManager = reactive({
+  setting: false,
+  trash: false,
+});
 
 // 基础笔记状态管理
 const notesInstance = useNotes();
@@ -168,6 +178,11 @@ const handleKeyDown = (event: any) => {
     toggleChat();
   }
 };
+
+// 是否有任何tab为true
+const anyTabVisible = computed(() => {
+  return Object.values(tabManager).some(tab => tab);
+});
 
 // 切换 AI 聊天显示状态
 const toggleChat = () => {
@@ -226,8 +241,7 @@ const toggleDarkMode = () => {
 };
 
 const openSettings = () => {
-  console.log('打开设置');
-  warning('功能开发中', '设置功能正在开发中');
+  tabManager.setting = true;
 };
 
 const openTrash = () => {
