@@ -568,7 +568,7 @@ onUnmounted(() => {
 }
 
 .rotate-90 {
-  transform: rotate(90deg);
+  transform: rotate(0deg);
 }
 
 /* 优化展开收缩动画 */

@@ -136,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, reactive, computed } from 'vue';
+import { ref, onMounted, onUnmounted, reactive, computed, watch } from 'vue';
 import SideBar from '../../components/SideBar.vue';
 import MuyaNoteView from '../../components/MuyaNoteView.vue';
 import AIChatView from '../../components/AIChatView.vue';
@@ -192,7 +192,14 @@ const toggleChat = () => {
 
 // 使用组合方法替换原有实现
 const addNote = () => addNoteAndRefresh();
-const handleSelectNote = (noteId: string) => selectNoteById(noteId);
+const handleSelectNote = (noteId: string) => {
+  Object.entries(tabManager).forEach(([key, value]) => {
+    if (value) {
+      toggleTab(key, false);
+    }
+  });
+  selectNoteById(noteId);
+};
 const handleUpdateNoteItem = (noteId: string, key: string, value: any) =>
   updateNoteItem(noteId, key, value);
 const handleMoveToTrash = (noteId: string) => moveNoteToTrash(noteId);
@@ -242,20 +249,30 @@ const toggleDarkMode = () => {
 };
 
 const openSettings = () => {
-  tabManager.setting = true;
+  toggleTab('setting', true);
 };
 
 const handleCloseSettings = () => {
-  tabManager.setting = false;
+  toggleTab('setting', false);
 };
 
 const openTrash = () => {
-  console.log('打开垃圾桶');
-  info('垃圾桶功能', '垃圾桶功能正在开发中');
+  toggleTab('trash', true);
 };
 
 const handleCloseTrash = () => {
-  tabManager.trash = false;
+  toggleTab('trash', false);
+};
+
+const toggleTab = (tab: string, value: boolean) => {
+  tabManager[tab] = value;
+  if (value) {
+    Object.keys(tabManager).forEach(key => {
+      if (key !== tab) {
+        tabManager[key] = false;
+      }
+    });
+  }
 };
 
 onMounted(async () => {
