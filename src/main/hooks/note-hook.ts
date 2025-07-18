@@ -16,6 +16,7 @@ import type {
   NoteAPIResponse,
 } from '../../../customTypes/interface/noteApi.type.ts';
 import { v4 as uuidv4 } from 'uuid';
+import { JSONFilePreset } from 'lowdb/node';
 
 /**
  * 笔记Hook返回接口
@@ -99,63 +100,106 @@ export interface NoteFilter {
 }
 
 /**
+ * lowdb 数据库类型定义
+ */
+interface IndexDatabase extends NoteIndex {}
+
+interface NotesDatabase {
+  notes: Record<string, INote>;
+}
+
+/**
+ * 笔记存储目录
+ */
+function getNotesDirectory(): string {
+  const userDataPath = app.getPath('userData');
+  return path.join(userDataPath, 'kxin-notes');
+}
+
+/**
+ * 确保笔记目录存在
+ */
+async function ensureNotesDirectory(): Promise<void> {
+  const notesDir = getNotesDirectory();
+  try {
+    await fs.access(notesDir);
+  } catch {
+    await fs.mkdir(notesDir, { recursive: true });
+  }
+}
+
+/**
+ * 初始化数据库
+ */
+async function initializeDatabases(): Promise<{
+  indexDb: Awaited<ReturnType<typeof JSONFilePreset<IndexDatabase>>>;
+  notesDb: Awaited<ReturnType<typeof JSONFilePreset<NotesDatabase>>>;
+}> {
+  // 确保笔记目录存在
+  await ensureNotesDirectory();
+
+  // 初始化索引数据库
+  const indexPath = path.join(getNotesDirectory(), 'note-index.json');
+  const indexDb = await JSONFilePreset<IndexDatabase>(indexPath, {
+    version: '1.0.0',
+    lastUpdated: new Date().toISOString(),
+    totalNotes: 0,
+    notes: [],
+  });
+
+  // 初始化笔记数据库
+  const notesPath = path.join(getNotesDirectory(), 'notes.json');
+  const notesDb = await JSONFilePreset<NotesDatabase>(notesPath, {
+    notes: {},
+  });
+
+  return { indexDb, notesDb };
+}
+
+// 数据库实例缓存
+let dbInstances: Promise<{
+  indexDb: Awaited<ReturnType<typeof JSONFilePreset<IndexDatabase>>>;
+  notesDb: Awaited<ReturnType<typeof JSONFilePreset<NotesDatabase>>>;
+}> | null = null;
+
+/**
+ * 获取数据库实例
+ */
+async function getDatabaseInstances() {
+  if (!dbInstances) {
+    dbInstances = initializeDatabases();
+  }
+  return await dbInstances;
+}
+
+/**
  * 笔记文件存储Hook
  */
 export function useNote(): UseNoteRetrun {
-  // 笔记存储目录
-  const getNotesDirectory = (): string => {
-    const userDataPath = app.getPath('userData');
-    return path.join(userDataPath, 'kxin-notes');
-  };
-
-  // 索引文件路径
-  const getIndexFilePath = (): string => {
-    return path.join(getNotesDirectory(), 'note-index.json');
-  };
-
   /**
-   * 确保笔记目录存在
-   */
-  async function ensureNotesDirectory(): Promise<void> {
-    const notesDir = getNotesDirectory();
-    try {
-      await fs.access(notesDir);
-    } catch {
-      await fs.mkdir(notesDir, { recursive: true });
-    }
-  }
-
-  /**
-   * 读取索引文件
+   * 读取索引
    */
   async function readIndex(): Promise<NoteIndex> {
-    const indexPath = getIndexFilePath();
-    try {
-      await ensureNotesDirectory();
-      const indexContent = await fs.readFile(indexPath, 'utf-8');
-      return JSON.parse(indexContent);
-    } catch (error) {
-      // 如果索引文件不存在或损坏，返回空索引
-      await rebuildIndex();
-      return await readIndex();
-    }
+    const { indexDb } = await getDatabaseInstances();
+    await indexDb.read();
+    return indexDb.data;
   }
 
   /**
-   * 写入索引文件
+   * 写入索引
    */
   async function writeIndex(index: NoteIndex): Promise<void> {
-    const indexPath = getIndexFilePath();
-    await ensureNotesDirectory();
+    const { indexDb } = await getDatabaseInstances();
     index.lastUpdated = new Date().toISOString();
     index.totalNotes = index.notes.length;
-    await fs.writeFile(indexPath, JSON.stringify(index, null, 2), 'utf-8');
+    indexDb.data = index;
+    await indexDb.write();
   }
 
   /**
    * 创建索引条目
    */
-  function createIndexEntry(note: INote, filePath: string): NoteIndexEntry {
+  function createIndexEntry(note: INote): NoteIndexEntry {
     return {
       id: note.id,
       title: note.metadata.title,
@@ -163,7 +207,7 @@ export function useNote(): UseNoteRetrun {
       icon: note.metadata.icon,
       cover: note.metadata.cover,
       tags: note.metadata.tags || [],
-      filePath,
+      filePath: '', // lowdb 中不需要文件路径
       createdAt: note.metadata.createdAt,
       updatedAt: note.metadata.updatedAt,
       wordCount: note.metadata.wordCount || 0,
@@ -181,10 +225,10 @@ export function useNote(): UseNoteRetrun {
   /**
    * 更新索引中的笔记条目
    */
-  async function updateNoteIndex(note: INote, filePath: string): Promise<void> {
+  async function updateNoteIndex(note: INote): Promise<void> {
     const index = await readIndex();
     const existingIndex = index.notes.findIndex(entry => entry.id === note.id);
-    const newEntry = createIndexEntry(note, filePath);
+    const newEntry = createIndexEntry(note);
 
     if (existingIndex >= 0) {
       // 更新现有条目
@@ -207,54 +251,30 @@ export function useNote(): UseNoteRetrun {
   }
 
   /**
-   * 生成笔记文件名
+   * 从数据库中读取笔记
    */
-  function generateFileName(
-    id: string,
-    updateTime: string,
-    title: string
-  ): string {
-    // 清理标题中的特殊字符，避免文件名问题
-    const cleanTitle = title
-      .replace(/[<>:"/\\|?*]/g, '_') // 替换Windows不允许的字符
-      .replace(/\s+/g, '_') // 替换空格
-      .substring(0, 50); // 限制长度
-
-    const timestamp = new Date(updateTime).getTime();
-    return `${id}_${timestamp}_${cleanTitle}.json`;
+  async function readNoteFromDb(id: string): Promise<INote | null> {
+    const { notesDb } = await getDatabaseInstances();
+    await notesDb.read();
+    return notesDb.data.notes[id] || null;
   }
 
   /**
-   * 根据ID查找笔记文件
+   * 将笔记写入数据库
    */
-  async function findNoteFile(id: string): Promise<string | null> {
-    // 先从索引中查找
-    const index = await readIndex();
-    const indexEntry = index.notes.find(entry => entry.id === id);
+  async function writeNoteToDb(note: INote): Promise<void> {
+    const { notesDb } = await getDatabaseInstances();
+    notesDb.data.notes[note.id] = note;
+    await notesDb.write();
+  }
 
-    if (indexEntry && indexEntry.filePath) {
-      // 检查文件是否存在
-      try {
-        await fs.access(indexEntry.filePath);
-        return indexEntry.filePath;
-      } catch {
-        // 文件不存在，从索引中删除并继续查找
-        await removeNoteFromIndex(id);
-      }
-    }
-
-    // 如果索引中没有或文件不存在，则在目录中查找
-    const notesDir = getNotesDirectory();
-    try {
-      const files = await fs.readdir(notesDir);
-      const noteFile = files.find(
-        file => file.startsWith(`${id}_`) && file.endsWith('.json')
-      );
-      return noteFile ? path.join(notesDir, noteFile) : null;
-    } catch (error) {
-      console.error('查找笔记文件失败:', error);
-      return null;
-    }
+  /**
+   * 从数据库中删除笔记
+   */
+  async function deleteNoteFromDb(id: string): Promise<void> {
+    const { notesDb } = await getDatabaseInstances();
+    delete notesDb.data.notes[id];
+    await notesDb.write();
   }
 
   /**
@@ -302,8 +322,6 @@ export function useNote(): UseNoteRetrun {
     request: CreateNoteRequest
   ): Promise<NoteAPIResponse<INote>> {
     try {
-      await ensureNotesDirectory();
-
       // 生成唯一ID
       const id = uuidv4();
       const now = new Date().toISOString();
@@ -349,14 +367,11 @@ export function useNote(): UseNoteRetrun {
       // 创建搜索索引
       note.searchIndex = createSearchIndex(note);
 
-      // 生成文件名并保存
-      const fileName = generateFileName(id, metadata.updatedAt, metadata.title);
-      const filePath = path.join(getNotesDirectory(), fileName);
-
-      await fs.writeFile(filePath, JSON.stringify(note, null, 2), 'utf-8');
+      // 保存到数据库
+      await writeNoteToDb(note);
 
       // 更新索引
-      await updateNoteIndex(note, filePath);
+      await updateNoteIndex(note);
 
       return {
         success: true,
@@ -379,18 +394,15 @@ export function useNote(): UseNoteRetrun {
    */
   async function getNoteById(id: string): Promise<NoteAPIResponse<INote>> {
     try {
-      const filePath = await findNoteFile(id);
+      const note = await readNoteFromDb(id);
 
-      if (!filePath) {
+      if (!note) {
         return {
           success: false,
           error: '笔记不存在',
           message: `未找到ID为 ${id} 的笔记`,
         };
       }
-
-      const fileContent = await fs.readFile(filePath, 'utf-8');
-      const note: INote = JSON.parse(fileContent);
 
       // 更新最后查看时间
       if (
@@ -399,11 +411,11 @@ export function useNote(): UseNoteRetrun {
         note.metadata.lastViewedAt = new Date().toISOString();
         note.stats.editCount += 1;
 
-        // 更新文件
-        await fs.writeFile(filePath, JSON.stringify(note, null, 2), 'utf-8');
+        // 更新数据库
+        await writeNoteToDb(note);
 
         // 更新索引
-        await updateNoteIndex(note, filePath);
+        await updateNoteIndex(note);
       }
 
       return {
@@ -428,19 +440,15 @@ export function useNote(): UseNoteRetrun {
     request: UpdateNoteRequest
   ): Promise<NoteAPIResponse<INote>> {
     try {
-      const oldFilePath = await findNoteFile(request.id);
+      const note = await readNoteFromDb(request.id);
 
-      if (!oldFilePath) {
+      if (!note) {
         return {
           success: false,
           error: '笔记不存在',
           message: `未找到ID为 ${request.id} 的笔记`,
         };
       }
-
-      // 读取现有笔记
-      const fileContent = await fs.readFile(oldFilePath, 'utf-8');
-      const note: INote = JSON.parse(fileContent);
 
       // 更新元数据
       if (request.metadata) {
@@ -470,33 +478,11 @@ export function useNote(): UseNoteRetrun {
         note.searchIndex = createSearchIndex(note);
       }
 
-      // 生成新文件名（因为更新时间变了）
-      const newFileName = generateFileName(
-        note.id,
-        note.metadata.updatedAt,
-        note.metadata.title
-      );
-      const newFilePath = path.join(getNotesDirectory(), newFileName);
-
-      // 保存更新后的笔记
-      await fs.writeFile(newFilePath, JSON.stringify(note, null, 2), 'utf-8');
-
-      // 如果文件名发生变化，重命名旧文件
-      if (oldFilePath !== newFilePath) {
-        try {
-          // 检查旧文件是否存在
-          await fs.access(oldFilePath);
-          // 重命名旧文件为备份文件
-          const backupFilePath = oldFilePath + '.backup';
-          await fs.rename(oldFilePath, backupFilePath);
-        } catch (error) {
-          // 如果旧文件不存在或重命名失败，记录警告但不影响更新流程
-          console.warn('重命名旧笔记文件失败:', error);
-        }
-      }
+      // 保存到数据库
+      await writeNoteToDb(note);
 
       // 更新索引
-      await updateNoteIndex(note, newFilePath);
+      await updateNoteIndex(note);
 
       return {
         success: true,
@@ -609,9 +595,9 @@ export function useNote(): UseNoteRetrun {
    */
   async function moveToTrash(id: string): Promise<NoteAPIResponse<INote>> {
     try {
-      const filePath = await findNoteFile(id);
+      const note = await readNoteFromDb(id);
 
-      if (!filePath) {
+      if (!note) {
         return {
           success: false,
           error: '笔记不存在',
@@ -619,20 +605,16 @@ export function useNote(): UseNoteRetrun {
         };
       }
 
-      // 读取笔记内容
-      const fileContent = await fs.readFile(filePath, 'utf-8');
-      const note: INote = JSON.parse(fileContent);
-
       // 更新状态为已删除
       note.status.isTrashed = true;
       note.metadata.updatedAt = new Date().toISOString();
       note.metadata.version += 1;
 
-      // 保存更新后的笔记
-      await fs.writeFile(filePath, JSON.stringify(note, null, 2), 'utf-8');
+      // 保存到数据库
+      await writeNoteToDb(note);
 
       // 更新索引
-      await updateNoteIndex(note, filePath);
+      await updateNoteIndex(note);
 
       return {
         success: true,
@@ -655,19 +637,15 @@ export function useNote(): UseNoteRetrun {
    */
   async function restoreFromTrash(id: string): Promise<NoteAPIResponse<INote>> {
     try {
-      const filePath = await findNoteFile(id);
+      const note = await readNoteFromDb(id);
 
-      if (!filePath) {
+      if (!note) {
         return {
           success: false,
           error: '笔记不存在',
           message: `未找到ID为 ${id} 的笔记`,
         };
       }
-
-      // 读取笔记内容
-      const fileContent = await fs.readFile(filePath, 'utf-8');
-      const note: INote = JSON.parse(fileContent);
 
       // 检查是否在垃圾桶中
       if (!note.status.isTrashed) {
@@ -683,11 +661,11 @@ export function useNote(): UseNoteRetrun {
       note.metadata.updatedAt = new Date().toISOString();
       note.metadata.version += 1;
 
-      // 保存更新后的笔记
-      await fs.writeFile(filePath, JSON.stringify(note, null, 2), 'utf-8');
+      // 保存到数据库
+      await writeNoteToDb(note);
 
       // 更新索引
-      await updateNoteIndex(note, filePath);
+      await updateNoteIndex(note);
 
       return {
         success: true,
@@ -712,19 +690,15 @@ export function useNote(): UseNoteRetrun {
     id: string
   ): Promise<NoteAPIResponse<boolean>> {
     try {
-      const filePath = await findNoteFile(id);
+      const note = await readNoteFromDb(id);
 
-      if (!filePath) {
+      if (!note) {
         return {
           success: false,
           error: '笔记不存在',
           message: `未找到ID为 ${id} 的笔记`,
         };
       }
-
-      // 读取笔记内容检查是否在垃圾桶中
-      const fileContent = await fs.readFile(filePath, 'utf-8');
-      const note: INote = JSON.parse(fileContent);
 
       if (!note.status.isTrashed) {
         return {
@@ -734,8 +708,8 @@ export function useNote(): UseNoteRetrun {
         };
       }
 
-      // 删除文件
-      await fs.unlink(filePath);
+      // 从数据库中删除
+      await deleteNoteFromDb(id);
 
       // 从索引中删除
       await removeNoteFromIndex(id);
@@ -758,9 +732,14 @@ export function useNote(): UseNoteRetrun {
   /**
    * 获取笔记列表
    */
-  async function getNotesList(): Promise<NoteAPIResponse<NoteIndexEntry[]>> {
+  async function getNotesList(
+    filterTrashed = true
+  ): Promise<NoteAPIResponse<NoteIndexEntry[]>> {
     try {
       const index = await readIndex();
+      if (filterTrashed) {
+        index.notes = index.notes.filter(note => !note.status.isTrashed);
+      }
       return {
         success: true,
         data: index.notes,
@@ -781,8 +760,9 @@ export function useNote(): UseNoteRetrun {
    */
   async function rebuildIndex(): Promise<NoteAPIResponse<boolean>> {
     try {
-      const notesDir = getNotesDirectory();
-      const files = await fs.readdir(notesDir);
+      const { notesDb } = await getDatabaseInstances();
+      await notesDb.read();
+
       const newIndex: NoteIndex = {
         version: '1.0.0',
         lastUpdated: new Date().toISOString(),
@@ -790,20 +770,15 @@ export function useNote(): UseNoteRetrun {
         notes: [],
       };
 
-      // 扫描所有笔记文件
-      for (const file of files) {
-        if (file.endsWith('.json') && file !== 'note-index.json') {
-          try {
-            const filePath = path.join(notesDir, file);
-            const fileContent = await fs.readFile(filePath, 'utf-8');
-            const note: INote = JSON.parse(fileContent);
-
-            // 创建索引条目
-            const indexEntry = createIndexEntry(note, filePath);
-            newIndex.notes.push(indexEntry);
-          } catch (error) {
-            console.warn(`跳过损坏的笔记文件: ${file}`, error);
-          }
+      // 扫描所有笔记
+      const allNotes = notesDb.data.notes;
+      for (const [noteId, note] of Object.entries(allNotes)) {
+        try {
+          // 创建索引条目
+          const indexEntry = createIndexEntry(note as INote);
+          newIndex.notes.push(indexEntry);
+        } catch (error) {
+          console.warn(`跳过损坏的笔记: ${noteId}`, error);
         }
       }
 
