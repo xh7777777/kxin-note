@@ -101,6 +101,82 @@ export class IpcChannelMainClass {
      */
     sendData?: unknown;
   }> = null;
+
+  /**
+   * AI配置相关事件
+   */
+
+  /**
+   * 获取完整的AI配置
+   */
+  AIConfigGet: IpcMainEventListener<
+    void,
+    import('../../customTypes/models/config.types').AIConfig
+  > = null;
+
+  /**
+   * 设置完整的AI配置
+   */
+  AIConfigSet: IpcMainEventListener<
+    import('../../customTypes/models/config.types').AIConfig
+  > = null;
+
+  /**
+   * 获取特定模型配置
+   */
+  AIConfigGetModel: IpcMainEventListener<
+    string,
+    import('../../customTypes/models/config.types').AIModelConfig | null
+  > = null;
+
+  /**
+   * 设置模型配置
+   */
+  AIConfigSetModel: IpcMainEventListener<
+    import('../../customTypes/models/config.types').AIModelConfig
+  > = null;
+
+  /**
+   * 删除模型配置
+   */
+  AIConfigDeleteModel: IpcMainEventListener<string> = null;
+
+  /**
+   * 获取默认模型配置
+   */
+  AIConfigGetDefault: IpcMainEventListener<
+    void,
+    import('../../customTypes/models/config.types').AIModelConfig | null
+  > = null;
+
+  /**
+   * 设置默认模型配置
+   */
+  AIConfigSetDefault: IpcMainEventListener<string> = null;
+
+  /**
+   * 创建示例配置
+   */
+  AIConfigCreateSample: IpcMainEventListener<
+    void,
+    import('../../customTypes/models/config.types').AIModelConfig
+  > = null;
+
+  /**
+   * 验证配置
+   */
+  AIConfigValidate: IpcMainEventListener<
+    import('../../customTypes/models/config.types').AIModelConfig,
+    { valid: boolean; errors: string[] }
+  > = null;
+
+  /**
+   * 获取支持的提供商
+   */
+  AIConfigGetProviders: IpcMainEventListener<
+    void,
+    import('../../customTypes/models/config.types').AIProvider[]
+  > = null;
 }
 
 /**

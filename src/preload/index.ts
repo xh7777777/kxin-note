@@ -139,3 +139,41 @@ contextBridge.exposeInMainWorld('editorAPI', {
     ipcRenderer.removeAllListeners('EditorSave');
   },
 });
+
+// 暴露AI配置API
+contextBridge.exposeInMainWorld('aiConfig', {
+  // 获取完整的AI配置
+  getConfig: () => ipcRenderer.invoke('ai-config:get'),
+
+  // 设置完整的AI配置
+  setConfig: (config: any) => ipcRenderer.invoke('ai-config:set', config),
+
+  // 获取特定模型配置
+  getModelConfig: (configId: string) =>
+    ipcRenderer.invoke('ai-config:get-model', configId),
+
+  // 设置模型配置
+  setModelConfig: (modelConfig: any) =>
+    ipcRenderer.invoke('ai-config:set-model', modelConfig),
+
+  // 删除模型配置
+  deleteModelConfig: (configId: string) =>
+    ipcRenderer.invoke('ai-config:delete-model', configId),
+
+  // 获取默认模型配置
+  getDefaultModelConfig: () => ipcRenderer.invoke('ai-config:get-default'),
+
+  // 设置默认模型配置
+  setDefaultModelConfig: (configId: string) =>
+    ipcRenderer.invoke('ai-config:set-default', configId),
+
+  // 创建示例配置
+  createSampleModelConfig: () => ipcRenderer.invoke('ai-config:create-sample'),
+
+  // 验证配置
+  validateModelConfig: (config: any) =>
+    ipcRenderer.invoke('ai-config:validate', config),
+
+  // 获取支持的提供商
+  getProviders: () => ipcRenderer.invoke('ai-config:get-providers'),
+});

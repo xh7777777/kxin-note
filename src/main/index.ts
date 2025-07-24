@@ -7,9 +7,10 @@ import { useDisableButton } from './hooks/disable-button-hook';
 import { useProcessException } from '@main/hooks/exception-hook';
 import { useMenu } from '@main/hooks/menu-hook';
 import { registerNoteActionHandlers } from './hooks/note-hook';
+import { initializeAIConfig } from './hooks/config-hook';
 import { startServer } from './server';
 
-function onAppReady() {
+async function onAppReady() {
   const { disableF12 } = useDisableButton();
   const { renderProcessGone } = useProcessException();
   const { defaultIpc } = useMainDefaultIpc();
@@ -22,6 +23,13 @@ function onAppReady() {
 
   // 注册笔记操作handlers
   registerNoteActionHandlers();
+
+  // 初始化AI配置管理
+  try {
+    await initializeAIConfig();
+  } catch (error) {
+    console.error('AI配置初始化失败:', error);
+  }
 
   new InitWindow().initWindow();
   if (process.env.NODE_ENV === 'development') {
