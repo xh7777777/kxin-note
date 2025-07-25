@@ -1,27 +1,145 @@
 <template>
   <div class="flex flex-col h-full">
     <!-- 聊天头部 -->
-    <div class="flex-shrink-0 flex items-center justify-between px-4 py-3">
-      <div class="flex items-center gap-2">
-        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-        <h3 class="text-sm font-medium text-gray-900">AI Assistant</h3>
-      </div>
-      <button
-        @click="$emit('close')"
-        class="flex items-center justify-center w-6 h-6 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-200 transition-all duration-200"
-        title="Close Chat (Ctrl+L)"
-      >
-        <svg
-          class="w-4 h-4"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
+    <div class="flex-shrink-0 border-b border-gray-200 px-4 py-3">
+      <div class="flex items-center justify-between">
+        <!-- AI状态和模型选择 -->
+        <div class="flex items-center gap-3 flex-1 ai-model-dropdown">
+          <div class="flex items-center gap-2">
+            <div
+              class="w-2 h-2 rounded-full"
+              :class="aiEnabled ? 'bg-green-500' : 'bg-gray-400'"
+            ></div>
+            <h3 class="text-sm font-medium text-gray-900">AI Assistant</h3>
+          </div>
+
+          <!-- 模型配置选择器 -->
+          <div
+            v-if="aiConfig && availableModelConfigs.length > 0"
+            class="relative"
+          >
+            <button
+              @click="showModelDropdown = !showModelDropdown"
+              class="flex items-center gap-2 px-2 py-1 text-xs bg-gray-50 hover:bg-gray-100 rounded-md transition-colors"
+              :disabled="modelSwitching"
+            >
+              <span
+                class="text-gray-700 max-w-[100px] truncate"
+                :title="defaultModelConfig?.name"
+              >
+                {{ defaultModelConfig?.name || '无模型' }}
+              </span>
+              <svg
+                class="w-3 h-3 text-gray-500 transition-transform duration-200"
+                :class="{ 'rotate-180': showModelDropdown }"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <polyline points="6,9 12,15 18,9"></polyline>
+              </svg>
+            </button>
+
+            <!-- 模型配置下拉菜单 -->
+            <div
+              v-if="showModelDropdown"
+              class="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-50 w-44 max-h-64 overflow-y-auto"
+            >
+              <div class="py-1">
+                <!-- 标题栏 -->
+                <div
+                  class="px-3 py-2 text-xs font-medium text-gray-500 border-b border-gray-100 bg-gray-50"
+                >
+                  {{
+                    availableModelConfigs.length > 1
+                      ? '选择AI模型'
+                      : '当前AI模型'
+                  }}
+                  ({{ availableModelConfigs.length }}个配置)
+                </div>
+
+                <!-- 模型配置列表 -->
+                <div
+                  v-for="config in availableModelConfigs"
+                  :key="config.id"
+                  class="px-3 py-2.5 text-xs transition-colors"
+                  :class="{
+                    'bg-indigo-50 text-indigo-700':
+                      config.id === defaultModelConfig?.id,
+                    'text-gray-700': config.id !== defaultModelConfig?.id,
+                    'cursor-pointer hover:bg-gray-50':
+                      !modelSwitching && config.id !== defaultModelConfig?.id,
+                    'opacity-50 cursor-not-allowed': modelSwitching,
+                    'cursor-default': config.id === defaultModelConfig?.id,
+                  }"
+                  @click="
+                    config.id !== defaultModelConfig?.id
+                      ? switchModelConfig(config.id)
+                      : null
+                  "
+                >
+                  <div class="flex items-center justify-between">
+                    <div class="flex-1 min-w-0">
+                      <div class="font-medium truncate">{{ config.name }}</div>
+                      <div class="text-gray-500 truncate">
+                        {{ getProviderName(config.providerId) }} •
+                        {{ config.modelId }}
+                      </div>
+                    </div>
+                    <div class="ml-2 flex items-center gap-1 flex-shrink-0">
+                      <!-- 切换中的加载指示器 -->
+                      <div
+                        v-if="
+                          modelSwitching && config.id !== defaultModelConfig?.id
+                        "
+                        class="w-3 h-3 border border-gray-300 border-t-indigo-600 rounded-full animate-spin"
+                      ></div>
+                      <!-- 当前激活状态指示器 -->
+                      <div
+                        v-if="config.id === defaultModelConfig?.id"
+                        class="w-2 h-2 bg-indigo-600 rounded-full"
+                        title="当前模型"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 底部提示 -->
+                <div
+                  v-if="availableModelConfigs.length === 1"
+                  class="px-3 py-2 text-xxs text-gray-400 border-t border-gray-100"
+                >
+                  在设置中可以添加更多AI模型配置
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 配置状态提示 -->
+          <div v-else-if="aiLoading" class="text-xs text-gray-500">
+            加载配置中...
+          </div>
+          <div v-else class="text-xs text-orange-500">未配置AI模型</div>
+        </div>
+
+        <!-- 关闭按钮 -->
+        <button
+          @click="$emit('close')"
+          class="flex items-center justify-center w-6 h-6 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-200 transition-all duration-200"
+          title="Close Chat (Ctrl+L)"
         >
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      </button>
+          <svg
+            class="w-4 h-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
     </div>
 
     <!-- 消息列表 -->
@@ -187,7 +305,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, onMounted, onUnmounted } from 'vue';
+import { ref, nextTick, onMounted, onUnmounted, computed } from 'vue';
+import type {
+  AIConfig,
+  AIModelConfig,
+} from '../../../customTypes/models/config.types';
 
 // 消息类型定义
 interface Message {
@@ -205,6 +327,14 @@ const emit = defineEmits<{
 const messages = ref<Message[]>([]);
 const inputMessage = ref('');
 const isLoading = ref(false);
+
+// AI配置状态
+const aiConfig = ref<AIConfig | null>(null);
+const defaultModelConfig = ref<AIModelConfig | null>(null);
+const aiEnabled = ref(false);
+const aiLoading = ref(false);
+const modelSwitching = ref(false);
+const showModelDropdown = ref(false);
 
 // DOM引用
 const messagesContainer = ref<any>(null);
@@ -298,6 +428,87 @@ const generateMockAIResponse = (userMessage: string): string => {
   return responses[Math.floor(Math.random() * responses.length)];
 };
 
+// 可用的模型配置列表
+const availableModelConfigs = computed(() => {
+  if (!aiConfig.value?.modelConfigs) return [];
+  return aiConfig.value.modelConfigs.filter(config => config.enabled);
+});
+
+// 加载AI配置信息
+const loadAIConfig = async () => {
+  try {
+    aiLoading.value = true;
+
+    // 并行获取AI配置和默认模型配置
+    const [config, defaultModel] = await Promise.all([
+      window.aiConfig.getConfig(),
+      window.aiConfig.getDefaultModelConfig(),
+    ]);
+
+    aiConfig.value = config;
+    defaultModelConfig.value = defaultModel;
+    aiEnabled.value = config.globalSettings.enabled && !!defaultModel;
+
+    console.log('AI配置加载成功:', {
+      enabled: aiEnabled.value,
+      defaultModel: defaultModel?.name,
+      provider: defaultModel?.providerId,
+    });
+  } catch (error) {
+    console.error('加载AI配置失败:', error);
+    aiEnabled.value = false;
+  } finally {
+    aiLoading.value = false;
+  }
+};
+
+// 切换模型配置
+const switchModelConfig = async (configId: string) => {
+  if (
+    modelSwitching.value ||
+    !configId ||
+    configId === defaultModelConfig.value?.id
+  ) {
+    showModelDropdown.value = false;
+    return;
+  }
+
+  try {
+    modelSwitching.value = true;
+
+    // 立即关闭下拉框
+    showModelDropdown.value = false;
+
+    // 设置为默认配置
+    await window.aiConfig.setDefaultModelConfig(configId);
+
+    // 重新加载配置
+    await loadAIConfig();
+
+    console.log('模型配置切换成功:', configId);
+  } catch (error) {
+    console.error('切换模型配置失败:', error);
+    // 出错时也关闭下拉框
+    showModelDropdown.value = false;
+  } finally {
+    modelSwitching.value = false;
+  }
+};
+
+// 获取提供商名称
+const getProviderName = (providerId: string): string => {
+  const provider = aiConfig.value?.providers.find(p => p.id === providerId);
+  return provider?.name || providerId;
+};
+
+// 点击外部关闭下拉框
+const handleClickOutside = (event: Event) => {
+  const target = event.target as Element;
+  if (!target.closest('.ai-model-dropdown')) {
+    showModelDropdown.value = false;
+  }
+};
+
 // 格式化时间
 const formatTime = (date: Date): string => {
   return date.toLocaleTimeString('zh-CN', {
@@ -315,19 +526,28 @@ const handleKeydown = (event: any) => {
 };
 
 // 组件挂载
-onMounted(() => {
+onMounted(async () => {
   // 聚焦输入框
   if (inputRef.value) {
     inputRef.value.focus();
   }
 
+  // 加载AI配置
+  await loadAIConfig();
+
   // 添加全局键盘事件监听
   document.addEventListener('keydown', handleKeydown);
+
+  // 添加点击外部关闭下拉框的事件监听
+  document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
   // 移除键盘事件监听
   document.removeEventListener('keydown', handleKeydown);
+
+  // 移除点击外部事件监听
+  document.removeEventListener('click', handleClickOutside);
 });
 </script>
 
@@ -375,5 +595,25 @@ button:focus-visible {
 /* textarea 样式优化 */
 textarea {
   field-sizing: content;
+}
+
+/* AI模型下拉框样式 */
+.ai-model-dropdown {
+  position: relative;
+}
+
+.ai-model-dropdown .absolute {
+  z-index: 60;
+}
+
+/* 旋转动画 */
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+/* 超小字体样式 */
+.text-xxs {
+  font-size: 0.625rem; /* 10px */
+  line-height: 0.75rem;
 }
 </style>

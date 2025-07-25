@@ -144,7 +144,7 @@
             <div class="space-y-0.5">
               <!-- Home -->
               <div
-                class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
+                class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200 hover:bg-gray-100"
                 @click="handleSetActiveTab('home')"
               >
                 <div class="text-base w-5 text-center">🏠</div>
@@ -153,7 +153,7 @@
 
               <!-- Pageshelf -->
               <div
-                class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200"
+                class="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-all duration-200 hover:bg-gray-100"
                 @click="handleSetActiveTab('notePages')"
               >
                 <div class="text-base w-5 text-center">📚</div>
@@ -249,7 +249,7 @@
           <!-- 设置按钮 -->
           <button
             @click="handleOpenSettings"
-            class="flex items-center justify-center w-8 h-8 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200"
+            class="flex items-center justify-center w-8 h-8 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-md transition-all duration-200 relative"
             title="打开设置"
           >
             <svg
@@ -485,8 +485,14 @@ const searchQuery = computed({
 });
 
 // 方法
-const handleSetActiveTab = (_tab: string) => {
-  // 功能待实现
+const handleSetActiveTab = (tab: string) => {
+  if (tab === 'home') {
+    // 处理主页导航
+    console.log('导航到主页');
+  } else if (tab === 'notePages') {
+    // 处理笔记本导航
+    console.log('导航到笔记本');
+  }
 };
 
 const handleSelectNotePage = (notePageId: string) => {
@@ -523,6 +529,9 @@ const handleToggleDarkMode = () => {
 const handleOpenTrash = () => {
   emit('open-trash');
 };
+
+// 暴露方法给父组件使用
+defineExpose({});
 
 // 生命周期
 onMounted(() => {
@@ -569,6 +578,10 @@ onUnmounted(() => {
 
 .rotate-90 {
   transform: rotate(0deg);
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
 }
 
 /* 优化展开收缩动画 */
