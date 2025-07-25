@@ -177,3 +177,24 @@ contextBridge.exposeInMainWorld('aiConfig', {
   // 获取支持的提供商
   getProviders: () => ipcRenderer.invoke('ai-config:get-providers'),
 });
+
+// 暴露AI功能API
+contextBridge.exposeInMainWorld('aiHook', {
+  // AI 聊天
+  chat: (request: any) => ipcRenderer.invoke('ai:chat', request),
+
+  // 测试AI配置连接
+  testConnection: (configId?: string) =>
+    ipcRenderer.invoke('ai:test-connection', configId),
+
+  // 获取AI模型信息
+  getModelInfo: (configId?: string) =>
+    ipcRenderer.invoke('ai:get-model-info', configId),
+
+  // 生成聊天标题
+  generateTitle: (messages: any[], configId?: string) =>
+    ipcRenderer.invoke('ai:generate-title', messages, configId),
+
+  // 清除客户端缓存
+  clearCache: () => ipcRenderer.invoke('ai:clear-cache'),
+});

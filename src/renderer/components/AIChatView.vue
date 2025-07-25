@@ -374,11 +374,12 @@ const sendMessage = async () => {
   if (!message || isLoading.value) return;
 
   // 添加用户消息
-  messages.value.push({
-    role: 'user',
+  const userMessage = {
+    role: 'user' as const,
     content: message,
     timestamp: new Date(),
-  });
+  };
+  messages.value.push(userMessage);
 
   // 清空输入
   inputMessage.value = '';
@@ -389,43 +390,56 @@ const sendMessage = async () => {
   isLoading.value = true;
 
   try {
-    // 模拟AI回复（这里可以替换为真实的AI API调用）
-    await new Promise(resolve =>
-      setTimeout(resolve, 1000 + Math.random() * 2000)
-    );
+    // 准备AI聊天请求
+    const chatRequest = {
+      messages: messages.value.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+      })),
+      configId: defaultModelConfig.value?.id, // 使用当前选择的模型配置
+    };
 
-    const aiResponse = generateMockAIResponse(message);
+    // 调用真实的AI接口
+    const response = await window.aiHook.chat(chatRequest);
 
+    // 添加AI回复
     messages.value.push({
       role: 'assistant',
-      content: aiResponse,
+      content: response.content,
       timestamp: new Date(),
     });
 
     scrollToBottom();
   } catch (error) {
-    console.error('发送消息失败:', error);
+    console.error('AI聊天失败:', error);
+
+    // 根据错误类型提供不同的错误消息
+    let errorMessage = '抱歉，我遇到了一些问题，请稍后再试。';
+
+    if (error instanceof Error) {
+      if (error.message.includes('API Key')) {
+        errorMessage = '请检查AI配置中的API Key是否正确。';
+      } else if (error.message.includes('配置')) {
+        errorMessage = '请先在设置中配置AI模型。';
+      } else if (
+        error.message.includes('网络') ||
+        error.message.includes('timeout')
+      ) {
+        errorMessage = '网络连接超时，请检查网络设置或代理配置。';
+      } else {
+        errorMessage = `AI服务错误: ${error.message}`;
+      }
+    }
+
     messages.value.push({
       role: 'assistant',
-      content: '抱歉，我遇到了一些问题，请稍后再试。',
+      content: errorMessage,
       timestamp: new Date(),
     });
   } finally {
     isLoading.value = false;
+    scrollToBottom();
   }
-};
-
-// 生成模拟AI回复
-const generateMockAIResponse = (userMessage: string): string => {
-  const responses = [
-    '这是一个很有趣的问题！让我来帮你分析一下...',
-    '根据你的描述，我建议你可以考虑以下几个方面：\n\n1. 首先确认问题的根本原因\n2. 制定具体的解决方案\n3. 逐步实施并观察效果',
-    '我理解你的需求。这种情况下，通常有几种不同的处理方式，每种都有其优缺点。',
-    '基于你提供的信息，我认为最佳的方法是...\n\n这样可以确保既满足你的需求，又能保持系统的稳定性。',
-    '让我为你总结一下关键要点：\n\n• 这个问题确实需要仔细考虑\n• 有多种解决方案可供选择\n• 建议先从简单的方案开始尝试',
-  ];
-
-  return responses[Math.floor(Math.random() * responses.length)];
 };
 
 // 可用的模型配置列表

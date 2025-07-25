@@ -115,6 +115,36 @@
                   编辑
                 </button>
                 <button
+                  @click="testConnection(config.id)"
+                  :disabled="
+                    !config.enabled ||
+                    !config.apiKey ||
+                    testingConnections.has(config.id)
+                  "
+                  class="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                >
+                  <svg
+                    v-if="testingConnections.has(config.id)"
+                    class="w-3 h-3 animate-spin"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <path d="M21 12a9 9 0 11-6.219-8.56"></path>
+                  </svg>
+                  <svg
+                    v-else
+                    class="w-3 h-3"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                  >
+                    <path d="M9 12l2 2 4-4"></path>
+                    <circle cx="12" cy="12" r="10"></circle>
+                  </svg>
+                  测试
+                </button>
+                <button
                   @click="deleteConfig(config.id)"
                   class="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
                 >
@@ -320,6 +350,7 @@ const providers = ref<AIProvider[]>([]);
 const showEditDialog = ref(false);
 const editingConfig = ref<AIModelConfig | null>(null);
 const validationErrors = ref<string[]>([]);
+const testingConnections = ref<Set<string>>(new Set());
 
 // 全局设置
 const globalSettings = ref({
@@ -476,6 +507,30 @@ async function setAsDefault(configId: string): Promise<void> {
     console.log('默认配置设置成功');
   } catch (error) {
     console.error('设置默认配置失败:', error);
+  }
+}
+
+async function testConnection(configId: string): Promise<void> {
+  try {
+    // 添加到测试中的连接列表
+    testingConnections.value.add(configId);
+
+    // 调用AI接口测试连接
+    const result = await window.aiHook.testConnection(configId);
+
+    if (result.success) {
+      alert(`✅ ${result.message}`);
+    } else {
+      alert(`❌ ${result.message}`);
+    }
+  } catch (error) {
+    console.error('测试连接失败:', error);
+    alert(
+      `❌ 测试连接失败: ${error instanceof Error ? error.message : '未知错误'}`
+    );
+  } finally {
+    // 从测试中的连接列表移除
+    testingConnections.value.delete(configId);
   }
 }
 

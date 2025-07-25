@@ -8,6 +8,7 @@ import { useProcessException } from '@main/hooks/exception-hook';
 import { useMenu } from '@main/hooks/menu-hook';
 import { registerNoteActionHandlers } from './hooks/note-hook';
 import { initializeAIConfig } from './hooks/config-hook';
+import { initializeAI } from './hooks/ai-hook';
 import { startServer } from './server';
 
 async function onAppReady() {
@@ -29,6 +30,13 @@ async function onAppReady() {
     await initializeAIConfig();
   } catch (error) {
     console.error('AI配置初始化失败:', error);
+  }
+
+  // 初始化AI模块
+  try {
+    await initializeAI();
+  } catch (error) {
+    console.error('AI模块初始化失败:', error);
   }
 
   new InitWindow().initWindow();
