@@ -44,13 +44,17 @@ import { useMuya } from '@renderer/hooks/useMuya';
 import NoteActionHeader from './NoteComponent/NoteActionHeader.vue';
 import RenameDialog from './NoteComponent/RenameDialog.vue';
 
+const handleGetSelection = (selection: string) => {
+  emit('selection-change', selection);
+};
+
 const {
   containerRef,
   init,
   clear,
   registerIpcListeners,
   unregisterIpcListeners,
-} = useMuya();
+} = useMuya(handleGetSelection);
 
 const props = defineProps<{
   currentNote: INote;
@@ -66,6 +70,7 @@ const emit = defineEmits<{
   (e: 'export-html', noteId: string): void;
   (e: 'rename', noteId: string, newName: string): void;
   (e: 'tag', noteId: string): void;
+  (e: 'selection-change', selection: any): void;
 }>();
 
 // 重命名弹窗相关状态

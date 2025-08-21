@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import {
   CodeBlockLanguageSelector,
   EmojiSelector,
@@ -17,6 +17,7 @@ import {
   zh,
 } from '@muyajs/core';
 import { eventBus, EventBusKey } from '../utils/eventBus';
+import { debounce } from 'lodash';
 
 Muya.use(EmojiSelector);
 Muya.use(InlineFormatToolbar);
@@ -32,7 +33,7 @@ Muya.use(TableDragBar);
 Muya.use(TableRowColumMenu);
 Muya.use(PreviewToolBar);
 
-export function useMuya() {
+export function useMuya(handleSelectionChange: (selection: string) => void) {
   const containerRef = ref<HTMLElement>();
   let muya: InstanceType<typeof Muya> | null = null;
   let removeUndoListener: (() => void) | null = null;
@@ -45,9 +46,13 @@ export function useMuya() {
     });
     editor.locale(zh);
     editor.init();
-    editor.on('selection-change', (changes: any) => {
-      console.log('selection-change', changes);
-    });
+    const selectionChange = debounce((changes: any) => {
+      const res = getSelectionRange();
+      if (res) {
+        handleSelectionChange(res);
+      }
+    }, 100);
+    editor.on('selection-change', selectionChange);
     editor.on('json-change', handleContentChange);
     muya = editor;
   };
@@ -116,6 +121,20 @@ export function useMuya() {
       throw new Error('Muya is not initialized');
     }
     const currentMarkdown = muya.getMarkdown();
+  };
+
+  const getSelectionRange = () => {
+    const selection = muya?.editor.selection;
+    if (selection.type == 'Range') {
+      const focus = selection.focus.offset;
+      const anchor = selection.anchor.offset;
+      const st = focus > anchor ? anchor : focus;
+      const ed = focus > anchor ? focus : anchor;
+      console.log(selection.focusBlock._text, st, ed);
+      const content = selection.focusBlock._text.slice(st, ed);
+      return content;
+    }
+    return '';
   };
 
   return {

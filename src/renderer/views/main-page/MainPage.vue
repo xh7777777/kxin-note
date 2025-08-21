@@ -90,6 +90,7 @@
           @export-html="handleExportHtml"
           @rename="handleRename"
           @tag="handleTag"
+          @selection-change="handleSelectionChange"
         />
       </div>
     </div>
@@ -162,6 +163,8 @@ const tabManager = reactive({
 // 基础笔记状态管理
 const notesInstance = useNotes();
 const { getNotesList, sideBarNotes, state } = notesInstance;
+
+const selection = ref('');
 
 // 组合操作方法
 const {
@@ -236,6 +239,11 @@ const handleRename = async (noteId: string, newName: string) => {
 const handleTag = (noteId: string) => {
   console.log('标签笔记:', noteId);
   info('功能开发中', '标签功能正在开发中');
+};
+
+const handleSelectionChange = (sel: any) => {
+  console.log('selection-change', sel);
+  selection.value = sel;
 };
 
 // UI 相关方法保持不变
